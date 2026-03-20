@@ -1,0 +1,214 @@
+{
+  "scenario_id": "supplier_voucher_booking",
+  "trace_token": "00cf8780f7",
+  "run_id": "ccab1ee22741482d9f8c16159c527c99",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "get_reference_data",
+    "get_reference_data",
+    "create_supplier",
+    "tripletex_get",
+    "tripletex_get",
+    "announce_step",
+    "create_voucher"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:search_tripletex_reference"
+          ],
+          "success_criteria": "Understand how to create a supplier and a voucher.",
+          "task_understanding": "Create a supplier named 'Eval Supplier 00cf8780f7' (org 998877665) and book a supplier invoice for 11,155.00 NOK (gross) with 25% VAT, using trace_token 00cf8780f7 in the description."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "accounts"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "vat_types"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_supplier",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "email": null,
+            "name": "Eval Supplier 00cf8780f7",
+            "organization_number": "998877665"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "tripletex_get",
+      "arguments": {
+        "kwargs": {
+          "cache_key": null,
+          "params": null,
+          "path": "/ledger/account?number=6540"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "tripletex_get",
+      "arguments": {
+        "kwargs": {
+          "cache_key": null,
+          "params": null,
+          "path": "/ledger/account?number=6800"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:create_voucher"
+          ],
+          "success_criteria": "A balanced ledger voucher is posted with the correct amounts, VAT, dates, supplier ID, and the trace token in the description.",
+          "task_understanding": "Create a ledger voucher for the supplier invoice using the curated create_voucher tool."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_voucher",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date": "2026-03-15",
+            "description": "INV-2026-0315 00cf8780f7",
+            "postings": [
+              {
+                "account_id": 424227650,
+                "amount_gross": 11155,
+                "amount_gross_currency": null,
+                "customer_id": null,
+                "date": "2026-03-15",
+                "description": "INV-2026-0315 00cf8780f7",
+                "employee_id": null,
+                "row": 1,
+                "supplier_id": null,
+                "vat_type_id": 1
+              },
+              {
+                "account_id": 424227422,
+                "amount_gross": -11155,
+                "amount_gross_currency": null,
+                "customer_id": null,
+                "date": "2026-03-15",
+                "description": "INV-2026-0315 00cf8780f7",
+                "employee_id": null,
+                "row": 2,
+                "supplier_id": 108245170,
+                "vat_type_id": null
+              }
+            ],
+            "send_to_ledger": true,
+            "vendor_invoice_number": "INV-2026-0315"
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 9,
+  "tripletex_write_count": 2,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "supplier_created": {
+      "passed": true,
+      "details": "Expected supplier name present in /supplier listing."
+    }
+  }
+}

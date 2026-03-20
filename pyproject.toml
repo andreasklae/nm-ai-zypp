@@ -1,4 +1,61 @@
 [project]
+<<<<<<< HEAD
+name = "ai-accounting-agent"
+version = "0.1.0"
+description = "Tripletex competition agent for Google Cloud Run"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.1",
+    "google-cloud-logging>=3.12.1",
+    "google-genai>=1.68.0",
+    "pydantic-ai-slim[google]",
+    "python-multipart>=0.0.20",
+    "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
+    "sentry-sdk>=2.30.0",
+    "uvicorn>=0.35.0",
+    "pydantic>=2.12.5",
+]
+
+[project.scripts]
+astar-island = "astar_island.cli:main"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.4.0",
+]
+
+[tool.fastapi]
+entrypoint = "ai_accounting_agent.main:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ai_accounting_agent", "astar_island"]
+
+[tool.setuptools.package-data]
+ai_accounting_agent = ["*.md", "*.pdf"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+markers = [
+    "live_api: tests that call the deployed Cloud Run service over HTTP",
+    "live_tripletex: tests that call the live Tripletex sandbox directly",
+    "live_astar_island: tests that call the live Astar Island API directly",
+]
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+=======
 name = "template-repository"
 version = "0.1.0"
 description = "Add your description here"
@@ -15,3 +72,4 @@ dev = [
 
 [tool.ruff]
 line-length = 120
+>>>>>>> 193efcfe0d04587a93521c728b75fd5ac3b98077

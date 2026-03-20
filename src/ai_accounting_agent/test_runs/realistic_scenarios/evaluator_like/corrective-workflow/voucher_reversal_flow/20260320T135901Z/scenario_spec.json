@@ -1,0 +1,35 @@
+{
+  "scenario_id": "voucher_reversal_flow",
+  "category": "corrective_workflow",
+  "prompt_template": "Opprett en leverand\u00f8r Eval Reverse Supplier {token}, bokf\u00f8r en enkel balansert voucher med beskrivelsen Eval Reverse Voucher {token}, og reverser deretter voucheret med dagens dato. trace_token={token}",
+  "expected_behavior": [
+    "The model should create the necessary accounting object and then reverse it.",
+    "The corrective action should happen only after a valid original voucher exists."
+  ],
+  "success_criteria": [
+    "Voucher creation and reversal appear in the tool trace.",
+    "No avoidable 4xx responses are logged."
+  ],
+  "score_focus": [
+    "Corrective workflow correctness.",
+    "Ordering of dependent write steps.",
+    "No unnecessary exploratory calls."
+  ],
+  "expected_tools": [
+    "create_supplier",
+    "create_voucher",
+    "reverse_voucher"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "6d21c317cc",
+  "attachment_manifest": []
+}

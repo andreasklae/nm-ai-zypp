@@ -1,0 +1,312 @@
+{
+  "scenario_id": "invoice_payment_flow",
+  "trace_token": "a649b687fc",
+  "run_id": "1170f7556ced42bbabc52b8bee330073",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tripletex_http_request",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "search_tripletex_reference",
+    "create_customer",
+    "announce_step",
+    "create_product",
+    "get_reference_data",
+    "create_order",
+    "announce_step",
+    "announce_step",
+    "tripletex_get",
+    "create_invoice",
+    "announce_step",
+    "announce_step",
+    "register_invoice_payment"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "search_tripletex_reference",
+            "generic_rest_api"
+          ],
+          "success_criteria": "Find the correct endpoints for creating customers, products, orders, invoices, and payments, then create them.",
+          "task_understanding": "The user wants to create a customer named 'Eval Payment Customer a649b687fc', a product named 'Eval Payment Product a649b687fc', an order with this product, invoice the order, and finally register a payment for the invoice."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "search_tripletex_reference",
+      "arguments": {
+        "kwargs": {
+          "max_results": 5,
+          "query": "create order invoice payment"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_customer",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "email": null,
+            "invoice_send_method": null,
+            "invoices_due_in": null,
+            "invoices_due_in_type": null,
+            "name": "Eval Payment Customer a649b687fc",
+            "organization_number": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_customer",
+            "create_product"
+          ],
+          "success_criteria": "Both the customer and the product are created successfully, and we have their IDs to use in the order creation.",
+          "task_understanding": "Create the required customer and product first so we can use them to create an order."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Eval Payment Product a649b687fc",
+            "number": null,
+            "price_excluding_vat_currency": 1000,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "invoice_payment_types"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_order",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108245262,
+            "delivery_date": "2024-10-15",
+            "order_date": "2024-10-15",
+            "order_lines": [
+              {
+                "count": 1,
+                "description": null,
+                "product_id": 84385866,
+                "unit_price_excluding_vat_currency": null
+              }
+            ]
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_order",
+            "get_reference_data"
+          ],
+          "success_criteria": "The order is created and we have the invoice payment types to use for the payment step.",
+          "task_understanding": "We need to create an order for the new customer and product, and simultaneously fetch the valid payment types so we can register a payment on the invoice later."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "tripletex_get"
+          ],
+          "success_criteria": "Verify if the order has orderLines so we don't cause a 4xx error when invoicing.",
+          "task_understanding": "The order creation response had an empty orderLines array. I need to verify whether the order lines were actually created or if I need to add them."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "tripletex_get",
+      "arguments": {
+        "kwargs": {
+          "cache_key": null,
+          "params": null,
+          "path": "/order/401957832?fields=*"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_invoice",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108245262,
+            "invoice_date": "2024-10-15",
+            "invoice_due_date": "2024-10-29",
+            "order_ids": [
+              401957832
+            ],
+            "send_to_customer": false
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_invoice"
+          ],
+          "success_criteria": "The invoice is generated successfully without 4xx errors, and we get the final invoice ID and amounts back.",
+          "task_understanding": "Now that the order has lines, I will generate an invoice for the customer from the created order."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "register_invoice_payment"
+          ],
+          "success_criteria": "Payment of 1000 is successfully registered on the invoice, concluding the workflow.",
+          "task_understanding": "We need to register a payment against the newly created invoice to mark it as paid."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "register_invoice_payment",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "invoice_id": 2147527115,
+            "paid_amount": 1000,
+            "paid_amount_currency": null,
+            "payment_date": "2024-10-16",
+            "payment_type_id": 32817129
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 11,
+  "tripletex_write_count": 5,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "payment_tool_present": {
+      "passed": true,
+      "details": "tool_sequence=['announce_step', 'search_tripletex_reference', 'create_customer', 'announce_step', 'create_product', 'get_reference_data', 'create_order', 'announce_step', 'announce_step', 'tripletex_get', 'create_invoice', 'announce_step', 'announce_step', 'register_invoice_payment']"
+    }
+  }
+}

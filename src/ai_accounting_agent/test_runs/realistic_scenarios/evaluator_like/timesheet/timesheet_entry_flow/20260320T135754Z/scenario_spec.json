@@ -1,0 +1,35 @@
+{
+  "scenario_id": "timesheet_entry_flow",
+  "category": "timesheet",
+  "prompt_template": "Opprett et prosjekt Eval Timesheet Project {token}, finn en gyldig aktivitet, og f\u00f8r 2,5 timer i dag med kommentaren Eval timesheet {token}. trace_token={token}",
+  "expected_behavior": [
+    "The model should create the project, discover the needed activity, and create one timesheet entry.",
+    "The model should not invent unsupported activity identifiers."
+  ],
+  "success_criteria": [
+    "Project creation, reference lookup, and timesheet entry creation all appear in the logs.",
+    "No avoidable 4xx responses are logged."
+  ],
+  "score_focus": [
+    "Dependency-aware workflow planning.",
+    "Correct use of reference lookup before write operations.",
+    "Low-error execution."
+  ],
+  "expected_tools": [
+    "create_project",
+    "get_timesheet_activities",
+    "create_timesheet_entry"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "5d11c60883",
+  "attachment_manifest": []
+}

@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-03-20T13:56:05.416511+00:00",
+  "scenario_id": "invoice_payment_flow",
+  "trace_token": "a649b687fc",
+  "request": {
+    "prompt": "Opprett kunde Eval Payment Customer a649b687fc, produkt Eval Payment Product a649b687fc, ordre og faktura, og registrer deretter betaling p\u00e5 fakturaen. trace_token=a649b687fc",
+    "files": [],
+    "tripletex_credentials": {
+      "base_url": "https://kkpqfuj-amager.tripletex.dev/v2",
+      "session_token": "[redacted]"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-cloud-trace-context": "2799b82b25f1491073c5d4ca5eba4e8e;o=1",
+      "date": "Fri, 20 Mar 2026 13:55:50 GMT",
+      "server": "Google Frontend",
+      "Content-Length": "22",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    },
+    "body": {
+      "status": "completed"
+    }
+  }
+}

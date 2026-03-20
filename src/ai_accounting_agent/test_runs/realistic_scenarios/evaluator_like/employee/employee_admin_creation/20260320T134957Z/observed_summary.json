@@ -1,0 +1,168 @@
+{
+  "scenario_id": "employee_admin_creation",
+  "trace_token": "b850568c3f",
+  "run_id": "7170627241124cae87e8aea66bd5f981",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "run.googleapis.com%2Frequests",
+    "run.googleapis.com%2Fstdout",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tool_result",
+    "run.googleapis.com%2Frequests",
+    "run.googleapis.com%2Fstdout",
+    "tool_call",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "search_tripletex_reference",
+    "search_tripletex_reference",
+    "announce_step",
+    "create_employee",
+    "announce_step",
+    "grant_employee_privileges"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:search_tripletex_reference"
+          ],
+          "success_criteria": "Find the correct API endpoint and payload structure for creating an employee and setting them as an account administrator.",
+          "task_understanding": "The user wants to create an employee named 'Eval Bruker b850568c3f' with email 'eval-employee-b850568c3f@example.org' and give them the 'Account Administrator' role."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "search_tripletex_reference",
+      "arguments": {
+        "kwargs": {
+          "max_results": 5,
+          "query": "create employee user type kontoadministrator account administrator"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "search_tripletex_reference",
+      "arguments": {
+        "kwargs": {
+          "max_results": 5,
+          "query": "kontoadministrator ALL_PRIVILEGES ACCOUNTANT"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:create_employee",
+            "default_api:grant_employee_privileges"
+          ],
+          "success_criteria": "Employee created with the specified details and given 'ALL_PRIVILEGES' entitlement template.",
+          "task_understanding": "Create an employee named Eval Bruker b850568c3f with email eval-employee-b850568c3f@example.org and give them account administrator privileges using the ALL_PRIVILEGES template."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_employee",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "department_id": null,
+            "email": "eval-employee-b850568c3f@example.org",
+            "first_name": "Eval",
+            "last_name": "Bruker b850568c3f",
+            "user_type": "EXTENDED"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:grant_employee_privileges"
+          ],
+          "success_criteria": "The employee 18564681 gets ALL_PRIVILEGES granted.",
+          "task_understanding": "The employee was created and now we must grant them the kontoadministrator (ALL_PRIVILEGES) template."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "grant_employee_privileges",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "employee_id": 18564681,
+            "template": "ALL_PRIVILEGES"
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 4,
+  "tripletex_write_count": 2,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "employee_created": {
+      "passed": true,
+      "details": "Expected employee email present in /employee listing."
+    }
+  }
+}

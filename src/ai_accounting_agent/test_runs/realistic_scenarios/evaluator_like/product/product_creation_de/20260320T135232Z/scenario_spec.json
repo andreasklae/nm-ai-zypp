@@ -1,0 +1,33 @@
+{
+  "scenario_id": "product_creation_de",
+  "category": "product",
+  "prompt_template": "Erstelle ein Produkt namens Eval Produkt {token} mit einem Preis ohne MwSt. von 1250 NOK. F\u00fchre nur die notwendigen Schritte aus. trace_token={token}",
+  "expected_behavior": [
+    "The model should create one product with the requested name and price.",
+    "The model should not create unrelated customers or projects."
+  ],
+  "success_criteria": [
+    "Product creation is visible in the tool trace.",
+    "The created product can be found by the unique name."
+  ],
+  "score_focus": [
+    "Multilingual prompt handling.",
+    "Correct product creation.",
+    "Minimal API usage."
+  ],
+  "expected_tools": [
+    "create_product"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "2e6dbf6a7a",
+  "attachment_manifest": []
+}

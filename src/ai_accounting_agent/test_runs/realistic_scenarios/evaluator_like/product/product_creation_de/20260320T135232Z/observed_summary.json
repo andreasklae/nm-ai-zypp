@@ -1,0 +1,95 @@
+{
+  "scenario_id": "product_creation_de",
+  "trace_token": "2e6dbf6a7a",
+  "run_id": "62d4a776f5a74d59988485c3f264a6a6",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "tool_result",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "search_tripletex_reference",
+    "create_product"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "search_tripletex_reference",
+            "call_tripletex_api"
+          ],
+          "success_criteria": "A product named 'Eval Produkt 2e6dbf6a7a' is successfully created with an ex-VAT price of 1250 NOK.",
+          "task_understanding": "The user wants to create a new product named 'Eval Produkt 2e6dbf6a7a' with a price of 1250 NOK (excluding VAT)."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "search_tripletex_reference",
+      "arguments": {
+        "kwargs": {
+          "max_results": 5,
+          "query": "create product POST /product"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Eval Produkt 2e6dbf6a7a",
+            "number": null,
+            "price_excluding_vat_currency": 1250,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 1,
+  "tripletex_write_count": 1,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "product_created": {
+      "passed": true,
+      "details": "Expected product name present in /product listing."
+    }
+  }
+}

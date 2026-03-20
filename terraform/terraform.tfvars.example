@@ -1,0 +1,9 @@
+project_id                       = "your-gcp-project-id"
+region                           = "europe-west4"
+artifact_registry_repository_id  = "ai-accounting-agent"
+cloud_run_service_name           = "ai-accounting-agent"
+cloud_run_service_account_email  = "cloud-run-runtime@your-gcp-project-id.iam.gserviceaccount.com"
+container_image                  = "europe-west4-docker.pkg.dev/your-gcp-project-id/ai-accounting-agent/ai-accounting-agent:latest"
+gemini_api_key_secret_id         = "ai-accounting-agent-gemini-api-key"
+endpoint_api_key_secret_id       = "ai-accounting-agent-endpoint-api-key"
+enable_endpoint_api_key          = true

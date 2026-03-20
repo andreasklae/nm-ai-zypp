@@ -1,0 +1,33 @@
+{
+  "scenario_id": "project_creation_es",
+  "category": "project",
+  "prompt_template": "Crea un proyecto llamado Eval Proyecto {token} que empiece hoy. No hagas nada adicional. trace_token={token}",
+  "expected_behavior": [
+    "The model should create a single project with the requested name.",
+    "The model should keep the workflow focused on the project task."
+  ],
+  "success_criteria": [
+    "Project creation appears in the tool trace.",
+    "The created project can be found afterward by the unique name."
+  ],
+  "score_focus": [
+    "Multilingual prompt handling.",
+    "Correct project creation.",
+    "No unnecessary calls."
+  ],
+  "expected_tools": [
+    "create_project"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "a4d542ae89",
+  "attachment_manifest": []
+}

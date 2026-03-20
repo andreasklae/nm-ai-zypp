@@ -1,0 +1,56 @@
+{
+  "scenario_id": "attachment_understanding_no_write",
+  "category": "file_understanding",
+  "prompt_template": "Les markdown-vedlegget, oppsummer kort hva dokumentet handler om, og ikke opprett eller endre noe i Tripletex. trace_token={token}",
+  "expected_behavior": [
+    "The model should inspect the attachment and summarize it.",
+    "The model should not create, update, or delete anything in Tripletex."
+  ],
+  "success_criteria": [
+    "HTTP response is completed.",
+    "Attachment metadata appears in logs.",
+    "No write tools or Tripletex write requests appear."
+  ],
+  "score_focus": [
+    "Grounds behavior in the attachment.",
+    "Avoids unnecessary write attempts.",
+    "Keeps API usage minimal for a read-only task."
+  ],
+  "expected_tools": [],
+  "forbidden_tools": [
+    "create_employee",
+    "grant_employee_privileges",
+    "create_customer",
+    "create_supplier",
+    "create_product",
+    "create_project",
+    "create_voucher",
+    "create_order",
+    "create_invoice",
+    "register_invoice_payment",
+    "create_credit_note",
+    "reverse_voucher",
+    "create_travel_expense",
+    "add_travel_expense_cost",
+    "transition_travel_expense",
+    "create_timesheet_entry"
+  ],
+  "attachment_filenames": [
+    "supplier_invoice_pdf.md"
+  ],
+  "expect_tripletex_write": false,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "39431a7a87",
+  "attachment_manifest": [
+    {
+      "filename": "supplier_invoice_pdf.md",
+      "mime_type": "text/markdown"
+    }
+  ]
+}

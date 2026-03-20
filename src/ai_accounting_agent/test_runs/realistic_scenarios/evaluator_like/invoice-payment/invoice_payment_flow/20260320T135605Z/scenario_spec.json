@@ -1,0 +1,38 @@
+{
+  "scenario_id": "invoice_payment_flow",
+  "category": "invoice_payment",
+  "prompt_template": "Opprett kunde Eval Payment Customer {token}, produkt Eval Payment Product {token}, ordre og faktura, og registrer deretter betaling p\u00e5 fakturaen. trace_token={token}",
+  "expected_behavior": [
+    "The model should complete the full order, invoice, and payment flow.",
+    "The model should not stop early after invoice creation."
+  ],
+  "success_criteria": [
+    "Invoice payment registration appears in the tool trace.",
+    "No avoidable 4xx responses are logged.",
+    "The workflow remains coherent from prerequisites to payment."
+  ],
+  "score_focus": [
+    "Multi-step financial workflow correctness.",
+    "Correct prerequisite planning.",
+    "Low-error execution."
+  ],
+  "expected_tools": [
+    "create_customer",
+    "create_product",
+    "create_order",
+    "create_invoice",
+    "register_invoice_payment"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "a649b687fc",
+  "attachment_manifest": []
+}

@@ -1,0 +1,33 @@
+{
+  "scenario_id": "customer_creation_en",
+  "category": "customer",
+  "prompt_template": "Create a customer named Eval Customer {token} with email eval-customer-{token}@example.org. Do only what is necessary. trace_token={token}",
+  "expected_behavior": [
+    "The model should create exactly one customer matching the requested name and email.",
+    "The model should not create unrelated entities."
+  ],
+  "success_criteria": [
+    "Customer creation appears in the tool trace.",
+    "The customer can be found afterward by the unique name or email."
+  ],
+  "score_focus": [
+    "Multilingual prompt handling.",
+    "Direct customer creation correctness.",
+    "Minimal unnecessary calls."
+  ],
+  "expected_tools": [
+    "create_customer"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "c8732c467b",
+  "attachment_manifest": []
+}
