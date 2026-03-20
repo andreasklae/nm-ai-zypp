@@ -159,3 +159,4 @@ local.settings.json
 logs/test_runs/*.json
 logs/cloud_exports/*.json
 .gcloud/
+.gcloud/
