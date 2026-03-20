@@ -158,3 +158,4 @@ local.settings.json
 # Generated live test artifacts
 logs/test_runs/*.json
 logs/cloud_exports/*.json
+.gcloud/
