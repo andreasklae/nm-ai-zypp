@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 variable "project_id" {
   description = "Google Cloud project ID."
   type        = string
@@ -48,3 +49,14 @@ variable "enable_endpoint_api_key" {
   type        = bool
   default     = false
 }
+=======
+variable "RG_NAME" {
+  description = "Resource group"
+  type        = string
+}
+
+variable "LOC" {
+  description = "Location of resources"
+  type        = string
+}
+>>>>>>> 193efcfe0d04587a93521c728b75fd5ac3b98077

@@ -520,6 +520,15 @@ class TripletexService:
 
     def create_employee(self, payload: CreateEmployeeInput) -> dict[str, Any]:
         self._require_step()
+        if payload.email:
+            existing = self._values(
+                self.client.get(
+                    "/employee",
+                    params={"email": payload.email, "count": 1, "fields": "id,firstName,lastName,email,employeeNumber,userType,version"},
+                )
+            )
+            if existing:
+                return existing[0]
         body = {
             "firstName": payload.first_name,
             "lastName": payload.last_name,
@@ -528,7 +537,10 @@ class TripletexService:
         }
         if payload.email:
             body["email"] = payload.email
-        response = self.client.post("/employee", json_body=body)
+        response = self._call_with_tripletex_retry_hint(
+            operation="employee creation",
+            call=lambda: self.client.post("/employee", json_body=body),
+        )
         return self._value(response)
 
     def grant_employee_privileges(self, payload: GrantEmployeePrivilegesInput) -> dict[str, Any]:

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 terraform {
   required_providers {
     google = {
@@ -146,4 +147,24 @@ output "next_steps" {
     var.enable_endpoint_api_key ? "Add a secret version to ${google_secret_manager_secret.endpoint_api_key[0].secret_id} with the endpoint bearer token." : "Endpoint bearer auth is disabled.",
     "Call the public Cloud Run URL with POST /solve and Authorization: Bearer <token> when endpoint auth is enabled.",
   ]
+=======
+# Configure the Azure provider
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.65.0"
+    }
+  }
+  backend "azurerm" {
+    resource_group_name  = "" # fill resource group name of storage account for tfstate
+    storage_account_name = "" # fill storage account name
+    container_name       = "" # fill container name
+    key                  = "" # Fill like "NAME_OF_PROJECT.tfstate"
+  }
+}
+
+provider "azurerm" {
+  features {}
+>>>>>>> 193efcfe0d04587a93521c728b75fd5ac3b98077
 }

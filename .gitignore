@@ -154,9 +154,12 @@ local.settings.json
 
 # uv
 .uv_cache
+<<<<<<< HEAD
 
 # Generated live test artifacts
 logs/test_runs/*.json
 logs/cloud_exports/*.json
 .gcloud/
 .gcloud/
+=======
+>>>>>>> 193efcfe0d04587a93521c728b75fd5ac3b98077

@@ -1,4 +1,5 @@
 [project]
+<<<<<<< HEAD
 name = "ai-accounting-agent"
 version = "0.1.0"
 description = "Tripletex competition agent for Google Cloud Run"
@@ -54,3 +55,21 @@ markers = [
 [build-system]
 requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
+=======
+name = "template-repository"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "sentry-sdk>=2.30.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+]
+
+[tool.ruff]
+line-length = 120
+>>>>>>> 193efcfe0d04587a93521c728b75fd5ac3b98077
