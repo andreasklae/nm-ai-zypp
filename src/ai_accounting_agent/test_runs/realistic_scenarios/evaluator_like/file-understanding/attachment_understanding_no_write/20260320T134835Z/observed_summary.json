@@ -1,0 +1,60 @@
+{
+  "scenario_id": "attachment_understanding_no_write",
+  "trace_token": "39431a7a87",
+  "run_id": "0be9c3ab65e948a79267bf887e2580f5",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [],
+          "success_criteria": "The user receives a brief summary of the attached document without any changes made to Tripletex.",
+          "task_understanding": "The user wants a short summary of the provided markdown attachment (a mock supplier invoice). The user explicitly requested not to create or modify anything in Tripletex."
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 0,
+  "tripletex_write_count": 0,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "no_tripletex_writes": {
+      "passed": true,
+      "details": "tripletex_write_count=0"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "scenario_id": "supplier_voucher_booking",
+  "category": "supplier_voucher",
+  "prompt_template": "Opprett en leverand\u00f8r med navn Eval Supplier {token} og bokf\u00f8r en leverand\u00f8rfaktura basert p\u00e5 vedlegget. Bruk {token} i beskrivelsen p\u00e5 f\u00f8ringen eller voucheret. Ikke gj\u00f8r un\u00f8dvendige oppslag. trace_token={token}",
+  "expected_behavior": [
+    "The model should use the attachment to ground a supplier + voucher workflow.",
+    "The model should create the supplier if needed and then book a balanced voucher."
+  ],
+  "success_criteria": [
+    "Supplier creation and voucher creation appear in the logs.",
+    "No 4xx Tripletex responses are logged.",
+    "The unique token is visible in the write path or created data."
+  ],
+  "score_focus": [
+    "Attachment-grounded bookkeeping.",
+    "Balanced voucher creation.",
+    "Low-error execution."
+  ],
+  "expected_tools": [
+    "create_supplier",
+    "create_voucher"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [
+    "supplier_invoice_pdf.md"
+  ],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "00cf8780f7",
+  "attachment_manifest": [
+    {
+      "filename": "supplier_invoice_pdf.md",
+      "mime_type": "text/markdown"
+    }
+  ]
+}

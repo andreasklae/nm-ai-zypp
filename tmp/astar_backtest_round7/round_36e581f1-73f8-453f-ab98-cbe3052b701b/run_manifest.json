@@ -1,0 +1,30 @@
+{
+  "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+  "artifact_dir": "tmp/astar_backtest_round7/round_36e581f1-73f8-453f-ab98-cbe3052b701b",
+  "active_round_status": "active",
+  "round_number": 7,
+  "created_at": "2026-03-20T19:49:18.146301+00:00",
+  "updated_at": "2026-03-20T19:49:18.146310+00:00",
+  "status": "backtested",
+  "phase1_plan": null,
+  "phase2_plan": null,
+  "observations": null,
+  "latent_proxies": null,
+  "uncertainty_summaries": [],
+  "prediction_model_name": "hierarchical-empirical-v4-transition",
+  "prediction_created_at": "2026-03-20T19:49:18.139913+00:00",
+  "prediction_validation": {
+    "valid": true,
+    "seed_count": 5,
+    "map_height": 40,
+    "map_width": 40,
+    "class_count": 6,
+    "min_probability": 0.01,
+    "max_sum_error": 0.0
+  },
+  "submission": null,
+  "official_score_metadata": null,
+  "evaluation_mode": "metadata_only",
+  "model_comparison_summary": null,
+  "warnings": []
+}

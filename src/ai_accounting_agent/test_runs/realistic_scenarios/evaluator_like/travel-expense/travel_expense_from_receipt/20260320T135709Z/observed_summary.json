@@ -1,0 +1,186 @@
+{
+  "scenario_id": "travel_expense_from_receipt",
+  "trace_token": "eafe0f44e9",
+  "run_id": "c37db43feec04837a62426b589e50bb3",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "get_reference_data",
+    "get_reference_data",
+    "get_reference_data",
+    "get_reference_data",
+    "create_travel_expense",
+    "add_travel_expense_cost"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_reference_data",
+            "create_travel_expense",
+            "add_travel_expense_cost_line"
+          ],
+          "success_criteria": "A travel expense named 'Eval Travel eafe0f44e9' is created with a cost line for the taxi receipt amount 428.00 NOK dated 2026-03-18.",
+          "task_understanding": "The user wants to create a travel expense based on the attached taxi receipt. I need to find the correct travel cost category for taxi/transport, create the travel expense, and add the cost line."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "travel_cost_categories"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "travel_payment_types"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {
+              "description": "Taxi"
+            },
+            "reference": "travel_cost_categories"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "travel_payment_types"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_travel_expense",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "department_id": null,
+            "employee_id": null,
+            "project_id": null,
+            "title": "Eval Travel eafe0f44e9",
+            "travel_details": {
+              "departure_date": "2026-03-18",
+              "departure_from": "Oslo S",
+              "departure_time": null,
+              "destination": "Vulkan 5",
+              "is_day_trip": true,
+              "is_foreign_travel": false,
+              "purpose": "Customer meeting with NordTek",
+              "return_date": "2026-03-18",
+              "return_time": null
+            }
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "add_travel_expense_cost",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "amount_currency_inc_vat": 428,
+            "comments": null,
+            "cost_category_id": 32817118,
+            "currency_id": 1,
+            "date": "2026-03-18",
+            "payment_type_id": 32817087,
+            "travel_expense_id": 11143553
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 6,
+  "tripletex_write_count": 2,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "travel_expense_created": {
+      "passed": true,
+      "details": "Expected travel expense title present in /travelExpense listing."
+    }
+  }
+}

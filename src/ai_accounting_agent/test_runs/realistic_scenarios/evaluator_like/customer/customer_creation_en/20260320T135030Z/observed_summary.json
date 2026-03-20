@@ -1,0 +1,99 @@
+{
+  "scenario_id": "customer_creation_en",
+  "trace_token": "c8732c467b",
+  "run_id": "4218dd9481524e61a48463c2be967532",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "create_customer",
+    "announce_step"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:search_tripletex_reference",
+            "default_api:tripletex_rest_post"
+          ],
+          "success_criteria": "Customer created with specified name and email.",
+          "task_understanding": "The user wants to create a new customer with a specific name and email address."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_customer",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "email": "eval-customer-c8732c467b@example.org",
+            "invoice_send_method": null,
+            "invoices_due_in": null,
+            "invoices_due_in_type": null,
+            "name": "Eval Customer c8732c467b",
+            "organization_number": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [],
+          "success_criteria": "The operation successfully created the customer.",
+          "task_understanding": "The customer has been successfully created. I will conclude the request."
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 1,
+  "tripletex_write_count": 1,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "customer_created": {
+      "passed": true,
+      "details": "Expected customer email present in /customer listing."
+    }
+  }
+}

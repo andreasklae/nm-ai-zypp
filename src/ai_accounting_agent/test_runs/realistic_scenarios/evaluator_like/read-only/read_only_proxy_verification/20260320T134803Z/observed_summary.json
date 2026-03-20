@@ -1,0 +1,79 @@
+{
+  "scenario_id": "read_only_proxy_verification",
+  "trace_token": "e5c50712e2",
+  "run_id": "ca1d5b59225447b9bc8f7718aca2fc6c",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "get_reference_data"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_reference_data"
+          ],
+          "success_criteria": "Successfully connect to the Tripletex proxy, retrieve 'whoami' information, and confirm read-only access without modifying any data.",
+          "task_understanding": "The user wants to verify connectivity to the Tripletex API proxy using read-only operations. I must not create or change any data."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "whoami"
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 1,
+  "tripletex_write_count": 0,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "no_tripletex_writes": {
+      "passed": true,
+      "details": "tripletex_write_count=0"
+    }
+  }
+}

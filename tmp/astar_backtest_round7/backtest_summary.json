@@ -1,0 +1,60 @@
+{
+  "created_at": "2026-03-20T19:49:18.146700+00:00",
+  "model_name": "hierarchical-empirical-v4-transition",
+  "calibrated_parameters": {
+    "direct_observation_weight": 0.86,
+    "prior_weight": 0.34,
+    "exact_weight": 0.22,
+    "relaxed_weight": 0.16,
+    "transition_weight": 0.2,
+    "nearest_weight": 0.08,
+    "transition_alpha": 2.0,
+    "latent_proxy_strength": 0.2,
+    "smoothing_base": 0.03,
+    "smoothing_dynamic_scale": 0.018,
+    "use_local_influence_pass": false,
+    "aggressive_transition_policy": false,
+    "legacy_trade_proxy_mode": false
+  },
+  "reports": [
+    {
+      "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+      "round_number": 7,
+      "artifact_dir": "tmp/astar_backtest_round7/round_36e581f1-73f8-453f-ab98-cbe3052b701b",
+      "model_name": "hierarchical-empirical-v4-transition",
+      "evaluation_mode": "metadata_only",
+      "official_round_status": "active",
+      "official_score_metadata": null,
+      "prediction_validation": {
+        "valid": true,
+        "seed_count": 5,
+        "map_height": 40,
+        "map_width": 40,
+        "class_count": 6,
+        "min_probability": 0.01,
+        "max_sum_error": 0.0
+      },
+      "holdout_metrics": null,
+      "legacy_holdout_metrics": null,
+      "model_comparison_summary": null,
+      "query_budget_used": 0,
+      "observed_coverage_fraction": 0.0,
+      "calibrated_parameters": {
+        "direct_observation_weight": 0.86,
+        "prior_weight": 0.34,
+        "exact_weight": 0.22,
+        "relaxed_weight": 0.16,
+        "transition_weight": 0.2,
+        "nearest_weight": 0.08,
+        "transition_alpha": 2.0,
+        "latent_proxy_strength": 0.2,
+        "smoothing_base": 0.03,
+        "smoothing_dynamic_scale": 0.018,
+        "use_local_influence_pass": false,
+        "aggressive_transition_policy": false,
+        "legacy_trade_proxy_mode": false
+      }
+    }
+  ],
+  "aggregate_metrics": {}
+}

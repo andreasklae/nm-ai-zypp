@@ -1,0 +1,208 @@
+{
+  "scenario_id": "order_invoice_flow",
+  "trace_token": "c7f14bc22f",
+  "run_id": "69c06a5220474a61906d8bba12a57036",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "announce_step",
+    "create_product",
+    "create_customer",
+    "announce_step",
+    "create_order",
+    "announce_step",
+    "create_invoice"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "search_tripletex_reference"
+          ],
+          "success_criteria": "Find the exact endpoint and payload requirements for creating orders, order lines, and invoicing them.",
+          "task_understanding": "The user wants to create a new customer, a new product, an order for that customer containing that product, and finally invoice that order. No payment should be registered."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_customer",
+            "create_product"
+          ],
+          "success_criteria": "Successfully created the customer and product, obtaining their IDs for the order creation.",
+          "task_understanding": "I need to create the customer 'Eval Invoice Customer c7f14bc22f' and product 'Eval Invoice Product c7f14bc22f' using the curated tools before I can create an order."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Eval Invoice Product c7f14bc22f",
+            "number": null,
+            "price_excluding_vat_currency": 100,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_customer",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "email": null,
+            "invoice_send_method": null,
+            "invoices_due_in": null,
+            "invoices_due_in_type": null,
+            "name": "Eval Invoice Customer c7f14bc22f",
+            "organization_number": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_order"
+          ],
+          "success_criteria": "Order successfully created linking the new customer and product.",
+          "task_understanding": "Next step is to create an order using the recently created customer and product IDs."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_order",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108245240,
+            "delivery_date": "2024-03-01",
+            "order_date": "2024-03-01",
+            "order_lines": [
+              {
+                "count": 1,
+                "description": null,
+                "product_id": 84385856,
+                "unit_price_excluding_vat_currency": null
+              }
+            ]
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_invoice"
+          ],
+          "success_criteria": "An invoice successfully created from the order without payment registration.",
+          "task_understanding": "Finally, I need to invoice the order I just created. I will use the `create_invoice` curated tool."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_invoice",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108245240,
+            "invoice_date": "2024-03-01",
+            "invoice_due_date": "2024-03-15",
+            "order_ids": [
+              401957808
+            ],
+            "send_to_customer": false
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 7,
+  "tripletex_write_count": 4,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "invoice_tools_present": {
+      "passed": true,
+      "details": "tool_sequence=['announce_step', 'announce_step', 'create_product', 'create_customer', 'announce_step', 'create_order', 'announce_step', 'create_invoice']"
+    }
+  }
+}

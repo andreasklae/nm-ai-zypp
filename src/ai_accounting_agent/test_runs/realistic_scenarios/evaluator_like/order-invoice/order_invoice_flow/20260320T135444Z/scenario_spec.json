@@ -1,0 +1,39 @@
+{
+  "scenario_id": "order_invoice_flow",
+  "category": "order_invoice",
+  "prompt_template": "Opprett en kunde Eval Invoice Customer {token}, et produkt Eval Invoice Product {token}, deretter en ordre og en faktura. Ikke registrer betaling. trace_token={token}",
+  "expected_behavior": [
+    "The model should construct the prerequisite entities in the right order.",
+    "The model should stop after invoice creation and not register payment."
+  ],
+  "success_criteria": [
+    "Customer, product, order, and invoice tools appear in the log trace.",
+    "No payment-registration tool is used.",
+    "No avoidable 4xx responses are logged."
+  ],
+  "score_focus": [
+    "Prerequisite planning.",
+    "Correct order-to-invoice flow.",
+    "Avoiding extra writes."
+  ],
+  "expected_tools": [
+    "create_customer",
+    "create_product",
+    "create_order",
+    "create_invoice"
+  ],
+  "forbidden_tools": [
+    "register_invoice_payment"
+  ],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "c7f14bc22f",
+  "attachment_manifest": []
+}

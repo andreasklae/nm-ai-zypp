@@ -1,0 +1,49 @@
+{
+  "scenario_id": "read_only_proxy_verification",
+  "category": "read_only",
+  "prompt_template": "Bekreft at du kan bruke Tripletex-proxyen. Bruk bare lesetilgang hvis det er nyttig, og ikke opprett eller endre noe. trace_token={token}",
+  "expected_behavior": [
+    "The model should confirm access without creating or changing any Tripletex entities.",
+    "It may use a minimal read-only lookup, but should avoid exploratory write behavior."
+  ],
+  "success_criteria": [
+    "HTTP response is completed.",
+    "No Tripletex write calls are logged.",
+    "No create or update workflow tools are used."
+  ],
+  "score_focus": [
+    "Correctly interprets a no-op task.",
+    "Minimizes unnecessary Tripletex calls.",
+    "Avoids avoidable 4xx responses."
+  ],
+  "expected_tools": [],
+  "forbidden_tools": [
+    "create_employee",
+    "grant_employee_privileges",
+    "create_customer",
+    "create_supplier",
+    "create_product",
+    "create_project",
+    "create_voucher",
+    "create_order",
+    "create_invoice",
+    "register_invoice_payment",
+    "create_credit_note",
+    "reverse_voucher",
+    "create_travel_expense",
+    "add_travel_expense_cost",
+    "transition_travel_expense",
+    "create_timesheet_entry"
+  ],
+  "attachment_filenames": [],
+  "expect_tripletex_write": false,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "e5c50712e2",
+  "attachment_manifest": []
+}

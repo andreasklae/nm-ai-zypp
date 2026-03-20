@@ -1,0 +1,35 @@
+{
+  "scenario_id": "employee_admin_creation",
+  "category": "employee",
+  "prompt_template": "Opprett en ansatt med fornavn Eval og etternavn Bruker {token}. E-post skal v\u00e6re eval-employee-{token}@example.org. Personen skal v\u00e6re kontoadministrator. Gj\u00f8r bare det som er n\u00f8dvendig. trace_token={token}",
+  "expected_behavior": [
+    "The model should create an employee and grant the requested admin-level privileges.",
+    "The model should avoid irrelevant extra setup outside the user request."
+  ],
+  "success_criteria": [
+    "Employee is created with the requested email address.",
+    "Privilege-granting behavior is visible in the tool trace.",
+    "No avoidable 4xx responses occur."
+  ],
+  "score_focus": [
+    "Correct entity creation.",
+    "Correct privilege assignment.",
+    "No unnecessary detours or retries."
+  ],
+  "expected_tools": [
+    "create_employee",
+    "grant_employee_privileges"
+  ],
+  "forbidden_tools": [],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "b850568c3f",
+  "attachment_manifest": []
+}

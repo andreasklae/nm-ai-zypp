@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-03-20T13:59:01.275023+00:00",
+  "scenario_id": "voucher_reversal_flow",
+  "trace_token": "6d21c317cc",
+  "request": {
+    "prompt": "Opprett en leverand\u00f8r Eval Reverse Supplier 6d21c317cc, bokf\u00f8r en enkel balansert voucher med beskrivelsen Eval Reverse Voucher 6d21c317cc, og reverser deretter voucheret med dagens dato. trace_token=6d21c317cc",
+    "files": [],
+    "tripletex_credentials": {
+      "base_url": "https://kkpqfuj-amager.tripletex.dev/v2",
+      "session_token": "[redacted]"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-cloud-trace-context": "6dfcb3d2fac1d238357247e2f464c35c;o=1",
+      "date": "Fri, 20 Mar 2026 13:58:46 GMT",
+      "server": "Google Frontend",
+      "Content-Length": "22",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    },
+    "body": {
+      "status": "completed"
+    }
+  }
+}

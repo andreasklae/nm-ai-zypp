@@ -1,0 +1,133 @@
+{
+  "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+  "artifact_dir": "data/astar_island/live_round7_baseline_20260320T141749Z",
+  "active_round_status": "active",
+  "round_number": 7,
+  "created_at": "2026-03-20T14:18:36.156214+00:00",
+  "updated_at": "2026-03-20T14:18:55.442740+00:00",
+  "status": "submitted",
+  "phase1_plan": null,
+  "phase2_plan": null,
+  "observations": null,
+  "latent_proxies": {
+    "settlement_survival": 0.5,
+    "ruin_intensity": 0.18,
+    "port_prevalence": 0.16,
+    "expansion_pressure": 0.14,
+    "reclamation_rate": 0.12
+  },
+  "uncertainty_summaries": [
+    {
+      "seed_index": 0,
+      "observed_fraction": 0.0,
+      "dynamic_candidate_cells": 1199,
+      "under_sampled_dynamic_cells": 1199,
+      "mean_entropy": 1.4376,
+      "high_entropy_cells": 1199,
+      "uncertainty_score": 2.8751
+    },
+    {
+      "seed_index": 1,
+      "observed_fraction": 0.0,
+      "dynamic_candidate_cells": 1273,
+      "under_sampled_dynamic_cells": 1273,
+      "mean_entropy": 1.4317,
+      "high_entropy_cells": 1273,
+      "uncertainty_score": 2.8633
+    },
+    {
+      "seed_index": 2,
+      "observed_fraction": 0.0,
+      "dynamic_candidate_cells": 1261,
+      "under_sampled_dynamic_cells": 1261,
+      "mean_entropy": 1.434,
+      "high_entropy_cells": 1261,
+      "uncertainty_score": 2.8681
+    },
+    {
+      "seed_index": 3,
+      "observed_fraction": 0.0,
+      "dynamic_candidate_cells": 1228,
+      "under_sampled_dynamic_cells": 1228,
+      "mean_entropy": 1.4367,
+      "high_entropy_cells": 1228,
+      "uncertainty_score": 2.8733
+    },
+    {
+      "seed_index": 4,
+      "observed_fraction": 0.0,
+      "dynamic_candidate_cells": 1235,
+      "under_sampled_dynamic_cells": 1235,
+      "mean_entropy": 1.4417,
+      "high_entropy_cells": 1235,
+      "uncertainty_score": 2.8833
+    }
+  ],
+  "prediction_model_name": "hierarchical-empirical-v2",
+  "prediction_created_at": "2026-03-20T14:18:40.624995+00:00",
+  "prediction_validation": {
+    "valid": true,
+    "seed_count": 5,
+    "map_height": 40,
+    "map_width": 40,
+    "class_count": 6,
+    "min_probability": 0.01,
+    "max_sum_error": 0.0
+  },
+  "submission": {
+    "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+    "created_at": "2026-03-20T14:18:55.429033+00:00",
+    "receipts": [
+      {
+        "seed_index": 0,
+        "status_code": 200,
+        "response_body": {
+          "status": "accepted",
+          "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+          "seed_index": 0
+        },
+        "skipped": false
+      },
+      {
+        "seed_index": 1,
+        "status_code": 200,
+        "response_body": {
+          "status": "accepted",
+          "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+          "seed_index": 1
+        },
+        "skipped": false
+      },
+      {
+        "seed_index": 2,
+        "status_code": 200,
+        "response_body": {
+          "status": "accepted",
+          "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+          "seed_index": 2
+        },
+        "skipped": false
+      },
+      {
+        "seed_index": 3,
+        "status_code": 200,
+        "response_body": {
+          "status": "accepted",
+          "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+          "seed_index": 3
+        },
+        "skipped": false
+      },
+      {
+        "seed_index": 4,
+        "status_code": 200,
+        "response_body": {
+          "status": "accepted",
+          "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+          "seed_index": 4
+        },
+        "skipped": false
+      }
+    ]
+  }
+}

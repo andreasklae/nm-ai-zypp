@@ -154,3 +154,7 @@ local.settings.json
 
 # uv
 .uv_cache
+
+# Generated live test artifacts
+logs/test_runs/*.json
+logs/cloud_exports/*.json

@@ -1,0 +1,15 @@
+.git
+.gitignore
+.pytest_cache
+.ruff_cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.python-version
+logs
+src/ai_accounting_agent/.env
+src/ai_accounting_agent/tests
+terraform/.terraform
+terraform/.terraform.lock.hcl
