@@ -282,8 +282,8 @@ def expected_cell_distribution(
         dist_dampen = 0.75 * exp_factor
 
     if code in INITIAL_OCCUPIED_CODES:
-        p_surv = params.settlement_survival_rate * (0.72 + 0.28 * support)
-        p_surv *= 1.0 - 0.22 * params.winter_severity_anchor * (1.0 - support)
+        p_surv = params.settlement_survival_rate * (0.75 + 0.50 * support)
+        p_surv *= 1.0 - 0.25 * params.winter_severity_anchor * (0.5 - support)
         p_surv = max(0.06, min(0.96, p_surv))
 
         dist_out = [0.0] * 6
