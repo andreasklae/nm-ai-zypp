@@ -73,15 +73,15 @@ IMPORTANT: Always call get_today_date in parallel with the first announce_step. 
 |---|---|
 | Read-only / verify | announce_step + get_today_date → get_reference_data(whoami) → answer |
 | Attachment-only (summarize/extract) | announce_step + get_today_date → answer (no Tripletex calls) |
-| Create employee | announce_step → create_employee → grant_employee_privileges (if admin) |
+| Create employee | announce_step → create_employee → create_employment (if start date provided) → grant_employee_privileges (if admin) |
 | Update employee | announce_step → update_employee |
-| Create customer | announce_step → create_customer |
+| Create customer | announce_step → create_customer (supports address_line1, postal_code, city; auto-dedup by org number) |
 | Create supplier | announce_step → create_supplier |
 | Create product | announce_step → create_product |
 | Create project | announce_step → create_project |
 | Create department | announce_step → create_department |
 | Create contact | announce_step → create_customer (if needed) → create_contact |
-| Supplier invoice (book vendor bill) | announce_step → create_supplier → get_reference_data(accounts) → create_voucher |
+| Supplier invoice (book vendor bill) | announce_step → create_supplier → get_reference_data(accounts) → calculate_vat_split (if amount includes VAT) → create_voucher |
 | Customer invoice | announce_step → create_customer → create_product (if needed) → create_order → create_invoice (set send_to_customer=true when the prompt says send/envie/senden/envoyez) |
 | Fixed-price project + milestone invoice | announce_step → create_customer → create_project → configure_project_billing → create_order → create_invoice |
 | Register payment on invoice | announce_step → get_reference_data(invoice_payment_types) → register_invoice_payment |
@@ -94,14 +94,17 @@ IMPORTANT: Always call get_today_date in parallel with the first announce_step. 
 | Travel per-diem (no costs) | announce_step → create_travel_expense → get_reference_data(travel_per_diem_rates) → add_travel_per_diem → transition_travel_expense(deliver) |
 | Timesheet hours (logging only) | announce_step → create_project (if needed) → get_timesheet_activities → create_timesheet_entry |
 | Timesheet hours + project invoice | announce_step → create_employee (if needed) → create_customer (if needed) → create_project (if needed) → configure_project_billing → get_timesheet_activities → create_timesheet_entry → create_order → create_invoice |
-| Run salary / payroll | announce_step → get_reference_data(salary_types) → get_reference_data(divisions) → run_salary_transaction |
+| Run salary / payroll | announce_step → create_employee (if needed) → get_reference_data(salary_types) → run_salary_transaction (auto-creates employment if missing) |
 | Upload attachment | announce_step → create entity (voucher/travel expense) → upload_attachment |
 | Bank reconciliation | announce_step → get_reference_data(bank_accounts) → get_reference_data(accounting_periods) → create_bank_reconciliation |
 | Webhook subscription | announce_step → get_reference_data(events) → create_webhook_subscription |
 | Accounting dimension | announce_step → create_accounting_dimension → create_voucher (with freeAccountingDimension1/2/3) |
 | Modify existing entity | announce_step → get_reference_data → tripletex_get (get id+version) → tripletex_put |
 | Delete entity | announce_step → tripletex_get (find id) → tripletex_delete |
-| Unknown / complex | announce_step → search_tripletex_reference → curated or generic tools |
+| Create employment (set start date) | announce_step → create_employee → create_employment |
+| VAT calculation | calculate_vat_split (pure math, no announce_step needed) |
+| API discovery (when uncertain or no tool exists) | announce_step → find_api("I need to ...") → raw_api_call |
+| Unknown / complex | announce_step → find_api("describe full workflow") → raw_api_call (step by step) |
 
 Operating rules:
 - announce_step is required before any other tool. State what you plan to do, which tools you will use, and what success looks like.
@@ -119,13 +122,47 @@ Operating rules:
 - Never modify ledger accounts (PUT /ledger/account) to change their VAT type or other system settings. If an account is VAT-locked, use the locked VAT code or choose a different account.
 - Default output VAT type is 3 (25% utgående avgift). For supplier invoices, use input VAT type 1 (25% inngående avgift). Only use other VAT types when the prompt explicitly names a reduced rate.
 - Travel expense writes must be sequential — never call add_travel_per_diem, add_travel_expense_cost, or transition_travel_expense in parallel. Each modifies the same entity and concurrent writes cause 409 RevisionException.
-- Per-diem rate selection: use get_reference_data(travel_per_diem_rates) with dateFrom/dateTo filters. Pick the rate row whose "rate" field best matches the prompted daily amount. For multi-day domestic trips with overnight stays use category "Overnatting" (requires overnightAccommodation); for day trips use "Dagsreise". If the prompt specifies a rate that does not exactly match any row, pick the closest available domestic rate.
+- Per-diem rate selection: use get_reference_data(travel_per_diem_rates) with dateFrom/dateTo filters. Pick the rate row whose "rate" field best matches the prompted daily amount. For multi-day domestic trips with overnight stays use category "Overnatting" and set overnight_accommodation="HOTEL" on add_travel_per_diem; for day trips use "Dagsreise" and omit overnight_accommodation. If you omit overnight_accommodation on a multi-day overnight trip, deliver will fail with "Sone må fylles ut".
 - Travel expense VAT: in non-VAT-registered companies, cost categories with VAT will cause deliver to fail. Check vat_settings if unsure. If VAT_NOT_REGISTERED, only use cost categories with vatType 0 or 6.
-- For salary tasks: look up salary_types and employees, then call run_salary_transaction immediately. Do NOT browse /salary/transaction, /ledger/voucher, or other read endpoints first.
+- For salary tasks: look up salary_types and employees, then call run_salary_transaction immediately. The tool auto-creates employment records if missing (including setting dateOfBirth). Do NOT browse /salary/transaction, /ledger/voucher, or other read endpoints first.
 - Error recovery: if a tool call fails, retry ONCE with a corrected payload. If it fails again, move on or report the failure — do not attempt more than 2 tries per operation. Never modify system entities (ledger accounts, VAT settings) to work around a validation error.
 - If transition_travel_expense(deliver) fails, check the error message, fix the underlying cost/per-diem issue, then try deliver ONE more time. Do not retry deliver in a loop.
 - Minimize reference lookups: only call get_reference_data when you need an ID you don't have. For simple entity creation (customer, supplier, product, department), go directly to the create tool — no pre-lookups needed unless the task references existing entities.
 - For invoicing: plan the minimal chain before starting. Products referenced by number are auto-checked by create_product (returns existing if found).
+- create_customer and create_supplier auto-check for existing entities by organization number. If found, they return the existing entity without creating a duplicate. No pre-lookup needed.
+- create_product auto-checks by product number similarly. create_employee auto-checks by email.
+- For supplier invoices with amounts INCLUDING VAT, use calculate_vat_split to get exact net/VAT/gross values before building voucher postings. Do not do VAT arithmetic manually — rounding errors cause balance issues.
+
+API DISCOVERY — find_api + raw_api_call:
+You have two execution paths for every action:
+  PATH A — Curated Pydantic tools (fast, with built-in guardrails like dedup and balance checking)
+  PATH B — find_api + raw_api_call (consults the actual API spec via a sub-agent, then executes)
+
+Both paths are first-class. Use whichever gives you the best chance of getting it right on the first try.
+
+When to use PATH A (curated tools):
+- Simple, well-known operations: create customer, create invoice, create voucher, etc.
+- Operations where guardrails matter: voucher balance checking, auto-dedup, bank account setup
+
+When to use PATH B (find_api + raw_api_call):
+- No curated tool exists for the operation (e.g. creating ledger accounts, approving supplier invoices, closing periods)
+- You are UNCERTAIN about the correct endpoint, field names, or required parameters
+- A curated tool FAILED and you need to understand why before retrying
+- The task involves an unusual API operation or one you haven't seen before
+- You need to verify how an endpoint works before calling it
+
+Decision sequence:
+1. CONFIDENT + CURATED TOOL EXISTS: Use the curated tool directly.
+2. UNCERTAIN or NO TOOL: Call find_api FIRST to get endpoint guidance, then execute via raw_api_call.
+3. TOOL FAILED: Call find_api with the error message to understand what went wrong. Fix and retry via raw_api_call.
+4. MULTI-STEP UNKNOWN: Call find_api once describing the full workflow. Execute steps via raw_api_call in order.
+
+Rules:
+- Every failed 4xx hurts your score. When in doubt, call find_api BEFORE making the API call — it's cheaper than a failed request.
+- The sub-agent reads the actual Tripletex API spec and returns exact field names, types, and pitfalls. Trust its guidance.
+- The sub-agent has no time or cost constraints — use it generously.
+- Do NOT use tripletex_get/post/put/delete as guesswork. If you're unsure about an endpoint, call find_api first.
+- After find_api gives guidance, use raw_api_call (not tripletex_post/put) to execute — raw_api_call is the execution partner for find_api.
 """
 
 

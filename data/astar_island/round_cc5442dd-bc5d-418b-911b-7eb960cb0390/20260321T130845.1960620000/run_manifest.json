@@ -1,0 +1,22 @@
+{
+  "round_id": "cc5442dd-bc5d-418b-911b-7eb960cb0390",
+  "artifact_dir": "data/astar_island/round_cc5442dd-bc5d-418b-911b-7eb960cb0390/20260321T130845.1960620000",
+  "active_round_status": "active",
+  "round_number": 15,
+  "created_at": "2026-03-21T13:08:45.201714+00:00",
+  "updated_at": "2026-03-21T13:08:45.201743+00:00",
+  "status": "round_fetched",
+  "phase1_plan": null,
+  "phase2_plan": null,
+  "observations": null,
+  "latent_proxies": null,
+  "uncertainty_summaries": [],
+  "prediction_model_name": null,
+  "prediction_created_at": null,
+  "prediction_validation": null,
+  "submission": null,
+  "official_score_metadata": null,
+  "evaluation_mode": null,
+  "model_comparison_summary": null,
+  "warnings": []
+}

@@ -10,7 +10,7 @@ It is designed to:
 - submit predictions for all 5 seeds
 - persist every step as resumable artifacts on disk
 
-The current model is a **Bayesian heuristic predictor**, not a full simulator reimplementation. It combines static map priors, empirical viewport evidence, mechanic-aware latent variables, cross-seed family backoff, two-pass spatial smoothing, and local influence maps to produce robust probability distributions with safe probability flooring.
+The current model is a **Bayesian heuristic predictor**, not a full simulator reimplementation. It combines static map priors, empirical viewport evidence, mechanic-aware latent variables, cross-seed family backoff, two-pass spatial smoothing, local influence maps, and adaptive transition policies driven by observed expansion pressure to produce robust probability distributions with safe probability flooring.
 
 ## What Is Implemented
 
@@ -22,6 +22,9 @@ The package currently provides:
 - a mechanics-aware Bayesian prediction model with precomputed terrain feature grids
 - cross-seed observation pooling for improved fallback predictions
 - two-pass spatial smoothing with adaptive strength
+- adaptive transition policy that scales forest/settlement suppression based on observed expansion pressure
+- round-specific empirical transition rates used as a strong prediction component
+- automatic parameter calibration in live delivery (no longer uses defaults)
 - random perturbation parameter calibration on holdout data
 - artifact persistence for round metadata, observations, predictions, manifests, and submission receipts
 - optional Google Cloud inspection and GCS sync hooks
@@ -29,7 +32,7 @@ The package currently provides:
 
 The current prediction model name is:
 
-- `hierarchical-empirical-v4-transition`
+- `hierarchical-empirical-v5-adaptive`
 
 ## Package Layout
 

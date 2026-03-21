@@ -1,0 +1,14 @@
+{
+  "id": "75e625c3-60cb-4392-af3e-c86a98bde8c2",
+  "status": "active",
+  "round_number": 10,
+  "map_width": 40,
+  "map_height": 40,
+  "seeds_count": null,
+  "event_date": "2026-03-20",
+  "prediction_window_minutes": 165,
+  "started_at": "2026-03-20T21:00:58.134788+00:00",
+  "closes_at": "2026-03-20T23:45:58.134788+00:00",
+  "round_weight": 1.6289,
+  "created_at": "2026-03-20T21:00:58.420157+00:00"
+}

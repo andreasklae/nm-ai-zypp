@@ -135,7 +135,7 @@ class PredictionModel(Protocol):
 
 
 class BaselinePredictor:
-    model_name = "hierarchical-empirical-v4-transition"
+    model_name = "hierarchical-empirical-v5-adaptive"
 
     def __init__(
         self,
@@ -213,6 +213,7 @@ class BaselinePredictor:
                 floor=self.floor,
                 aggressive=self.parameters.aggressive_transition_policy,
                 features=features,
+                proxies=latent_proxies,
             )
             observed_direct_posteriors: dict[tuple[int, int], tuple[list[float], int]] = {}
 
@@ -249,6 +250,7 @@ class BaselinePredictor:
                                 floor=self.floor,
                                 aggressive=self.parameters.aggressive_transition_policy,
                                 features=features,
+                                proxies=latent_proxies,
                             )
                         )
                         observed_direct_posteriors[(x, y)] = (row[-1], direct.samples)
@@ -351,6 +353,7 @@ class BaselinePredictor:
                             floor=self.floor,
                             aggressive=self.parameters.aggressive_transition_policy,
                             features=features,
+                            proxies=latent_proxies,
                         )
                     )
                 tensor.append(row)
@@ -379,6 +382,7 @@ class BaselinePredictor:
                 floor=self.floor,
                 aggressive=self.parameters.aggressive_transition_policy,
                 features=features,
+                proxies=latent_proxies,
             )
             smoothed = _restore_observed_direct_posteriors(
                 smoothed,
@@ -1783,7 +1787,7 @@ def _apply_latent_proxy_shift(
                     strength,
                 )
             if frontier:
-                current[1] *= _scaled_multiplier(0.72 + proxies.expansion_pressure * 1.60, strength)
+                current[1] *= _scaled_multiplier(0.72 + proxies.expansion_pressure * 2.40, strength)
                 current[2] *= _scaled_multiplier(0.80 + proxies.trade_strength * (0.90 if coastal else 0.15), strength)
                 current[3] *= _scaled_multiplier(
                     0.72 + proxies.conflict_pressure * 0.95 + proxies.ruin_intensity * 0.65,
@@ -1839,9 +1843,10 @@ def _apply_local_influence_maps(
             current[3] *= 0.74 + winter * 0.90 + conflict * 0.86 + proxies.conflict_pressure * 0.14
             current[4] *= 0.78 + rebuild * (0.85 if code == 3 else 0.25) + (0.35 if code in FOREST_CODES else 0.0)
             if code in FOREST_CODES:
-                current[1] *= 0.40 + support * 0.15
+                expansion = proxies.expansion_pressure if proxies else 0.14
+                current[1] *= 0.40 + support * 0.15 + expansion * 0.55
                 current[2] *= 0.18 if coastal else 0.05
-                current[4] *= 1.45
+                current[4] *= 1.45 - expansion * 0.45
             if code in INITIAL_OCCUPIED_CODES:
                 current[1] *= 1.00 + trade * 0.16 + support * 0.12
                 current[3] *= 0.90 + winter * 0.28
@@ -1860,6 +1865,7 @@ def _apply_transition_policy_to_cell(
     floor: float,
     aggressive: bool = False,
     features: SeedFeatureGrid | None = None,
+    proxies: LatentProxySummary | None = None,
 ) -> list[float]:
     code = state.grid[y][x]
     if code in OCEAN_CODES:
@@ -1867,6 +1873,7 @@ def _apply_transition_policy_to_cell(
     if code in MOUNTAIN_CODES:
         return normalize_distribution([0.0, 0.0, 0.0, 0.0, 0.0, 1.0], floor=floor)
 
+    expansion = proxies.expansion_pressure if proxies else 0.14
     coastal = features.coastal[y][x] if features else _is_coastal_land_fallback(state.grid, x, y)
     support = influence_maps.support_map[y][x]
     winter = influence_maps.winter_risk_map[y][x]
@@ -1883,20 +1890,24 @@ def _apply_transition_policy_to_cell(
         if aggressive:
             if distribution[4] < 0.34 and forest_unlock < 0.95:
                 current[4] = 0.0
-            current[1] *= 0.78 + support * 0.55
+            current[1] *= 0.78 + support * 0.55 + expansion * 0.40
         else:
             f_score = features.forest_score[y][x] if features else _forest_score_fallback(state.grid, x, y)
             f_adj = features.adj_forest[y][x] if features else _adj_forest_fallback(state.grid, x, y)
             forest_support = max(f_score, f_adj / 4.0)
             current[4] *= 0.15 + forest_support * 0.95 + forest_unlock * 0.40
-            current[1] *= 0.82 + support * 0.40
+            current[1] *= 0.82 + support * 0.40 + expansion * 0.40
             current[0] *= 0.96 + (1.0 - support) * 0.10
 
     if code in FOREST_CODES:
-        current[1] *= (0.28 + support * 0.20) if aggressive else (0.38 + support * 0.24)
+        settle_base = 0.28 if aggressive else 0.38
+        settle_support_scale = 0.20 if aggressive else 0.24
+        forest_stay_mult = 1.65 if aggressive else 1.38
+        empty_mult = 1.10 if aggressive else 1.08
+        current[1] *= settle_base + support * settle_support_scale + expansion * 0.80
         current[2] *= 0.10 if coastal else 0.0
-        current[4] *= 1.65 if aggressive else 1.38
-        current[0] *= 1.10 if aggressive else 1.08
+        current[4] *= forest_stay_mult - expansion * 0.55
+        current[0] *= empty_mult
 
     if code in INITIAL_OCCUPIED_CODES:
         current[4] *= (0.38 + rebuild * 0.28) if aggressive else (0.52 + rebuild * 0.24)
@@ -1920,6 +1931,7 @@ def _apply_transition_policy(
     floor: float,
     aggressive: bool = False,
     features: SeedFeatureGrid | None = None,
+    proxies: LatentProxySummary | None = None,
 ) -> ProbabilityTensor:
     output: ProbabilityTensor = []
     for y, row in enumerate(tensor):
@@ -1935,6 +1947,7 @@ def _apply_transition_policy(
                     floor=floor,
                     aggressive=aggressive,
                     features=features,
+                    proxies=proxies,
                 )
             )
         output.append(output_row)

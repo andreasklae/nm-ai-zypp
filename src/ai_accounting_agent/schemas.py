@@ -125,6 +125,9 @@ class CreateCustomerInput(StrictBaseModel):
         default=None, description="Invoice due offset value when the task specifies payment terms."
     )
     invoices_due_in_type: str | None = Field(default=None, description="Unit for invoices_due_in, for example DAYS.")
+    address_line1: str | None = Field(default=None, description="Street address line, e.g. 'Torggata 50'.")
+    postal_code: str | None = Field(default=None, description="Postal/zip code, e.g. '9008'.")
+    city: str | None = Field(default=None, description="City name, e.g. 'Tromsø'.")
 
     @field_validator("organization_number")
     @classmethod
@@ -387,6 +390,10 @@ class AddTravelPerDiemInput(StrictBaseModel):
     rate_category_id: int = Field(description="The rate row's 'rateCategory.id' field from the same lookup.")
     location: str = Field(min_length=1, description="Location for per-diem compensation.")
     count: int = Field(gt=0, description="Number of per-diem units (days).")
+    overnight_accommodation: str | None = Field(
+        default=None,
+        description="REQUIRED for multi-day trips with overnight stays. Set to 'HOTEL' for hotel, 'NONE' for no accommodation provided. Omit only for day trips.",
+    )
     is_deduction_for_breakfast: bool = Field(default=False, description="Deduct breakfast from per-diem.")
     is_deduction_for_lunch: bool = Field(default=False, description="Deduct lunch from per-diem.")
     is_deduction_for_dinner: bool = Field(default=False, description="Deduct dinner from per-diem.")
@@ -485,5 +492,51 @@ class ReferenceLookupInput(StrictBaseModel):
     ]
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="Optional raw Tripletex query filters for general reference lookups. Prefer dedicated tools for dependency-heavy lookups such as timesheet activities.",
+        description=(
+            "Optional Tripletex query filters. Values must be exact matches (integers or strings). "
+            "No wildcards (%), patterns, or SQL syntax. "
+            'For account ranges, use numberFrom/numberTo (e.g. {"numberFrom": 8000, "numberTo": 8999}). '
+            "See the tool docstring for valid filter keys per reference type."
+        ),
+    )
+
+
+class CalculateVatSplitInput(StrictBaseModel):
+    amount_including_vat: float = Field(gt=0, description="Total amount including VAT.")
+    vat_percentage: float = Field(ge=0, le=100, description="VAT rate as a percentage (e.g. 25 for 25%).")
+
+
+class CreateEmploymentInput(StrictBaseModel):
+    employee_id: int = Field(description="Existing employee ID.")
+    start_date: str = Field(min_length=1, description="Employment start date in ISO format YYYY-MM-DD.")
+    division_id: int | None = Field(
+        default=None,
+        description="Division ID. Omit to auto-use the first existing division or create one.",
+    )
+    is_main_employer: bool = Field(default=True, description="Whether this is the main employer.")
+
+
+class FindApiInput(StrictBaseModel):
+    need: str = Field(
+        min_length=1,
+        description=(
+            "Natural language description of what you need to accomplish via the Tripletex API. "
+            "Include what you tried and any error messages if this is a retry."
+        ),
+    )
+
+
+class RawApiCallInput(StrictBaseModel):
+    method: Literal["GET", "POST", "PUT", "DELETE"] = Field(description="HTTP method.")
+    path: str = Field(
+        min_length=1,
+        description="Tripletex API path (e.g. '/invoice', '/ledger/voucher/{id}/:reverse').",
+    )
+    body: dict[str, Any] | None = Field(
+        default=None,
+        description="JSON request body for POST/PUT requests.",
+    )
+    query_params: dict[str, Any] | None = Field(
+        default=None,
+        description="URL query parameters.",
     )

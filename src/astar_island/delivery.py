@@ -56,11 +56,13 @@ def _query_signature(sample_or_query: ObservationSample | object) -> tuple[objec
 def _artifact_dir(settings: AstarIslandSettings, *, round_id: int, explicit_dir: Path | None) -> Path:
     if explicit_dir is not None:
         return explicit_dir
-    return round_artifact_dir(settings.data_dir, round_id, utc_now_iso().replace(":", "").replace("-", "").replace("+", ""))
+    return round_artifact_dir(
+        settings.data_dir, round_id, utc_now_iso().replace(":", "").replace("-", "").replace("+", "")
+    )
 
 
 def _merge_samples(existing: list[ObservationSample], new: list[ObservationSample]) -> list[ObservationSample]:
-    merged = { _query_signature(sample): sample for sample in existing }
+    merged = {_query_signature(sample): sample for sample in existing}
     for sample in new:
         merged[_query_signature(sample)] = sample
     return sorted(merged.values(), key=lambda item: item.planned_query.query_index)
@@ -137,7 +139,9 @@ def _is_budget_exhausted_error(exc: RuntimeError) -> bool:
     return "query budget exhausted" in message and "429" in message
 
 
-def validate_prediction_bundle(bundle: PredictionBundle, *, expected_seed_count: int, map_height: int, map_width: int) -> PredictionValidationSummary:
+def validate_prediction_bundle(
+    bundle: PredictionBundle, *, expected_seed_count: int, map_height: int, map_width: int
+) -> PredictionValidationSummary:
     if len(bundle.seeds) != expected_seed_count:
         raise RuntimeError(f"Expected {expected_seed_count} seed predictions, got {len(bundle.seeds)}.")
     min_probability = 1.0
@@ -173,11 +177,7 @@ def _submit_with_resume(
 ) -> SubmissionBundle:
     previous = load_submission_receipts(artifact_dir)
     completed = (
-        {
-            receipt.seed_index
-            for receipt in previous.receipts
-            if receipt.status_code < 400 and not receipt.skipped
-        }
+        {receipt.seed_index for receipt in previous.receipts if receipt.status_code < 400 and not receipt.skipped}
         if previous is not None
         else set()
     )
@@ -231,7 +231,9 @@ def collect_two_phase_observations(
     if phase1_plan is None:
         phase1_plan = build_phase1_observation_plan(round_detail)
 
-    phase1_samples = _execute_missing_queries(client, round_detail.id, phase1_plan, _filter_phase_samples(existing_samples, "phase1"))
+    phase1_samples = _execute_missing_queries(
+        client, round_detail.id, phase1_plan, _filter_phase_samples(existing_samples, "phase1")
+    )
     phase1_collection, manifest = _persist_phase_checkpoint(
         artifact_dir=artifact_dir,
         manifest=manifest,
@@ -332,7 +334,16 @@ def deliver_round(
     )
     save_run_manifest(resolved_artifact_dir, manifest)
 
-    predictor = BaselinePredictor()
+    from astar_island.backtest import (
+        _archive_rounds_from_artifacts,
+        _load_local_round_artifacts,
+        fit_predictor_parameters,
+    )
+
+    local_artifacts = _load_local_round_artifacts(settings.data_dir)
+    calibrated_parameters = fit_predictor_parameters(local_artifacts)
+    archive_rounds = _archive_rounds_from_artifacts(local_artifacts)
+    predictor = BaselinePredictor(parameters=calibrated_parameters, archive_rounds=archive_rounds)
     try:
         _, observations, manifest = collect_two_phase_observations(
             client=client,
@@ -379,7 +390,9 @@ def deliver_round(
         submission = _submit_with_resume(client, resolved_artifact_dir, final_predictions)
         manifest = _update_manifest(
             manifest,
-            status="submitted" if all(receipt.status_code < 400 or receipt.skipped for receipt in submission.receipts) else "submit_failed",
+            status="submitted"
+            if all(receipt.status_code < 400 or receipt.skipped for receipt in submission.receipts)
+            else "submit_failed",
             submission=submission,
         )
         save_run_manifest(resolved_artifact_dir, manifest)
