@@ -99,8 +99,10 @@ This table maps each curated agent tool to the underlying Tripletex endpoint and
 | create_order | POST /order | deliveryDate is REQUIRED. Supports project.id for project billing |
 | create_invoice | POST /invoice?sendToCustomer=false | Needs order_ids. Auto-ensures bank account on 1920 |
 | register_invoice_payment | PUT /invoice/{id}/:payment | Query params: paymentDate, paymentTypeId, paidAmount |
-| create_credit_note | PUT /invoice/{id}/:createCreditNote | Query params: date, comment. Also for cancelled/returned payments |
-| reverse_voucher | PUT /ledger/voucher/{id}/:reverse | Query param: date |
+| create_credit_note | PUT /invoice/{id}/:createCreditNote | Query params: date, comment. For crediting invoices ONLY — do NOT use for payment reversals |
+| reverse_voucher | PUT /ledger/voucher/{id}/:reverse | Query param: date. Use this for reversing payments returned by bank |
+| calculate_vat_split | (pure calculation) | Splits amount incl. VAT into net + VAT components. Use for supplier invoices |
+| create_employment | POST /employee/employment | Sets employee start date. Auto-creates division if needed |
 | create_travel_expense | POST /travelExpense | travelDetails MUST be nested, not at root level |
 | add_travel_expense_cost | POST /travelExpense/cost | Needs costCategory.id, paymentType.id, currency.id |
 | add_travel_mileage_allowance | POST/PUT /travelExpense/mileageAllowance | Look up `rateType.id` from `GET /travelExpense/rate?type=MILEAGE_ALLOWANCE` |
@@ -353,7 +355,25 @@ Full example with common fields:
 }
 ```
 
-Auto-filled by Tripletex: `customerNumber`, `language` ("NO"), `currency` (NOK), `ledgerAccount` (1500), postal/physical addresses.
+Full example with address (used when task provides street, postal code, city):
+
+```json
+{
+  "name": "Fjordkraft AS",
+  "organizationNumber": "843216285",
+  "email": "post@fjordkraft.no",
+  "invoiceSendMethod": "EMAIL",
+  "postalAddress": {
+    "addressLine1": "Fjordveien 129",
+    "postalCode": "2317",
+    "city": "Hamar"
+  }
+}
+```
+
+Address can be set at creation time via the nested `postalAddress` object — no need to create the customer first and then update with a PUT.
+
+Auto-filled by Tripletex: `customerNumber`, `language` ("NO"), `currency` (NOK), `ledgerAccount` (1500), postal/physical addresses (if not provided).
 
 ### Update / Delete
 
@@ -378,6 +398,19 @@ No `name` filter exists. Use `supplierNumber`, `organizationNumber`, or `GET /su
   "email": "faktura@leverandor.no"
 }
 ```
+
+With separate invoice email (used when the task specifies a dedicated invoice email like `faktura@...`):
+
+```json
+{
+  "name": "Dalheim AS",
+  "organizationNumber": "892196753",
+  "email": "post@dalheim.no",
+  "invoiceEmail": "faktura@dalheim.no"
+}
+```
+
+`invoiceEmail` is the email address where invoices should be sent. It's separate from the general `email` field. If the task only provides one email and it looks like an invoice email (e.g., starts with `faktura@`), set it as both `email` and `invoiceEmail`.
 
 Auto-filled: `supplierNumber`, `currency`, `ledgerAccount` (2400), addresses.
 
@@ -772,12 +805,17 @@ Date and comment are **query parameters**. Returns new credit note invoice with 
 
 ### Cancel/reverse a payment (returned by bank)
 
-When a payment has been returned by the bank and you need to restore the invoice to unpaid, use `create_credit_note` on the original invoice. This nullifies the invoice (including its payment) and restores the outstanding amount.
+When a payment has been returned by the bank and you need to restore the invoice to unpaid, reverse the **payment voucher** (not the invoice itself). A credit note would zero out the entire invoice, which is wrong — the customer still owes the money.
+
+**Do NOT use `create_credit_note` for payment reversals** — that cancels the invoice entirely.
 
 Flow:
-1. Find customer: `GET /customer?organizationNumber=...` or `GET /customer?customerName=...`
+1. Find customer: `GET /customer?organizationNumber=...`
 2. Find invoice: `GET /invoice?customerId={id}&invoiceDateFrom=2020-01-01&invoiceDateTo=2030-12-31&fields=id,invoiceNumber,amount,amountOutstanding,isCreditNote`
-3. Create credit note: `PUT /invoice/{id}/:createCreditNote?date=2026-03-20&comment=Payment returned by bank`
+3. Find payment voucher: `GET /ledger/posting?dateFrom=2020-01-01&dateTo=2030-12-31` filtered by the invoice — look for postings on account 1920 (bank). The voucher ID is on the posting's `voucher.id` field.
+4. Reverse the payment voucher: `PUT /ledger/voucher/{paymentVoucherId}/:reverse?date=2026-03-20`
+
+This restores the original invoice's `amountOutstanding`.
 
 **Important**: `/invoice` collection reads REQUIRE `invoiceDateFrom` + `invoiceDateTo`. Without them you get `400`.
 
@@ -820,6 +858,23 @@ Send types: `EMAIL`, `EHF`, `AVTALEGIRO`, `EFAKTURA`, `VIPPS`, `PAPER`, `MANUAL`
 ```text
 GET /invoice?invoiceDateFrom=2026-01-01&invoiceDateTo=2026-12-31&count=10&fields=id,invoiceNumber,invoiceDate,invoiceDueDate,customer(id,name),amount,amountOutstanding,isCreditNote,version
 ```
+
+Filter parameters: `id`, `invoiceDateFrom` (required), `invoiceDateTo` (required), `customerId`, `invoiceNumber`, `kid`, `voucherId`, `isNotSent`.
+
+**Common search patterns:**
+
+Find invoices for a specific customer:
+```text
+GET /invoice?customerId={id}&invoiceDateFrom=2020-01-01&invoiceDateTo=2030-12-31&fields=id,invoiceNumber,amount,amountOutstanding,isCreditNote
+```
+
+Find original (non-credit) invoices only — critical when issuing credit notes or reversing payments:
+```text
+GET /invoice?customerId={id}&invoiceDateFrom=2020-01-01&invoiceDateTo=2030-12-31&fields=id,invoiceNumber,amount,amountOutstanding,isCreditNote
+```
+Then filter results in code for `isCreditNote=false` (there is no query-level filter for this).
+
+**Important**: `invoiceDateFrom` + `invoiceDateTo` are always required. Without them the API returns `400`.
 
 ## 8. Supplier Invoice
 
@@ -1052,6 +1107,21 @@ This differs from regular cost lines:
 - It does not use `paymentType`, `costCategory`, or `currency`
 - Amount is derived from the rate table, not sent directly
 
+### Selecting the correct per-diem rate category
+
+The `GET /travelExpense/rate?type=PER_DIEM` endpoint returns multiple rate categories. Select based on trip type:
+
+| Trip type | Rate category name pattern | Typical use |
+|-----------|---------------------------|-------------|
+| Day trip 6-12 hours | "Dagsreise 6-12 timer - innland" | Single-day domestic travel |
+| Day trip >12 hours | "Dagsreise over 12 timer - innland" | Long single-day domestic travel |
+| Overnight domestic | "Overnatting - innland" | Multi-day domestic trips (the most common for 2+ day trips) |
+| Foreign travel | "Utland" categories | International trips |
+
+For multi-day trips (e.g., "Reisen varte 4 dager"), use the **overnight** rate category, NOT the day-trip category. Set `count` to the number of overnight stays (typically `days - 1` for return trips, or `days` if the prompt says "X days with per-diem").
+
+When the task specifies a daily rate (e.g., "dagssats 800 NOK"), this is for reference — the actual per-diem amount comes from Tripletex's rate table. If the task's daily rate differs from the system rate, the closest matching rate category should still be used.
+
 ### Travel expense lifecycle
 
 ```text
@@ -1139,6 +1209,10 @@ Returns 12 monthly periods for the fiscal year. Each has `start`, `end`, `isClos
 GET /employee?count=10&fields=id,firstName,lastName,email,employeeNumber,displayName,userType,phoneNumberMobile,phoneNumberWork,department(id,name),version
 ```
 
+Filter parameters: `id`, `firstName`, `lastName`, `email`, `employeeNumber`, `departmentId`, `allowInformationRegistration`, `includeContacts`, `hasSystemAccess`.
+
+Most common search: `GET /employee?email=ola@example.org&fields=id,firstName,lastName,email` — used when tasks reference employees by email.
+
 ### Create
 
 **Required fields**: `firstName`, `lastName`, `userType`, `department`.
@@ -1206,6 +1280,20 @@ PUT /employee/18567149
 ```
 
 Gotcha: after employee creation, `GET /employee/{id}` may return `userType: null` even when the create payload used `"STANDARD"`. Sending `"STANDARD"` again on update still works.
+
+### Competition workflow (create employee with start date)
+
+Tasks often ask to create an employee with a start date (e.g., "opprett vedkommende som ansatt med startdato 13. January 2026"). The `startDate` is NOT on the employee entity — it lives on the **employment** record.
+
+Full flow:
+1. `GET /department?count=1` → get default department id
+2. `POST /employee` with `firstName`, `lastName`, `email`, `userType: "STANDARD"`, `department.id`
+3. `PUT /employee/{id}` with `dateOfBirth` (required for salary operations later)
+4. `POST /division` (if none exists) → division id (see Section 15)
+5. `POST /employee/employment` with `employee.id`, `startDate`, `division.id`, `isMainEmployer: true`
+6. `PUT /employee/entitlement/:grantEntitlementsByTemplate?employeeId={id}&template=ALL_PRIVILEGES` (optional)
+
+Steps 4-5 are needed if salary operations will follow. For simple employee creation without salary, steps 1-3 suffice.
 
 ### Grant entitlements (set admin role)
 

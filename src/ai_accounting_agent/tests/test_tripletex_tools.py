@@ -47,6 +47,10 @@ class FakeClient:
             return {"value": {"employeeId": 77}}
         if path == "/activity/>forTimeSheet":
             return {"values": [{"id": 555, "name": "Fakturerbart arbeid"}]}
+        if path == "/supplier":
+            return {"values": []}
+        if path == "/customer":
+            return {"values": []}
         if path == "/project/123":
             fields = (params or {}).get("fields")
             if fields == "*":

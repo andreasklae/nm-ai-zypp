@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from importlib import resources
@@ -16,6 +17,7 @@ from ai_accounting_agent.schemas import (
     AddTravelExpenseCostInput,
     AddTravelMileageAllowanceInput,
     AddTravelPerDiemInput,
+    CalculateVatSplitInput,
     ConfigureProjectBillingInput,
     CreateAccountingDimensionInput,
     CreateBankReconciliationInput,
@@ -24,6 +26,7 @@ from ai_accounting_agent.schemas import (
     CreateCustomerInput,
     CreateDepartmentInput,
     CreateEmployeeInput,
+    CreateEmploymentInput,
     CreateInvoiceInput,
     CreateOrderInput,
     CreateProductInput,
@@ -33,8 +36,10 @@ from ai_accounting_agent.schemas import (
     CreateTravelExpenseInput,
     CreateVoucherInput,
     CreateWebhookSubscriptionInput,
+    FindApiInput,
     GetTimesheetActivitiesInput,
     GrantEmployeePrivilegesInput,
+    RawApiCallInput,
     ReferenceLookupInput,
     RegisterInvoicePaymentInput,
     ReverseVoucherInput,
@@ -48,6 +53,38 @@ from ai_accounting_agent.tripletex_client import TripletexApiError, TripletexCli
 
 DEFAULT_BANK_ACCOUNT_NUMBER = "86011117947"
 PRE_ANNOUNCE_TOOL_NAMES = {"announce_step", "search_tripletex_reference", "get_today_date"}
+
+FIND_API_SYSTEM_PROMPT = """\
+You are a Tripletex API specialist. You receive the full API documentation and a request describing what the caller needs to accomplish.
+
+Your job:
+1. Find the correct endpoint(s) for the request.
+2. Return the HTTP method, path, and ALL required fields with their exact names, types, and constraints.
+3. If the task requires multiple sequential API calls, list them in order with dependencies noted.
+4. Include a realistic example request body with plausible field values.
+5. Flag common pitfalls: nested field structures, fields that look optional but are actually required, resources that must exist before this call works, non-obvious enum values.
+
+Rules:
+- Field names must exactly match the API spec. Do not paraphrase or rename them.
+- If you are unsure whether a field is required, include it and mark it as "likely required".
+- Do not explain what REST APIs are. Do not include generic HTTP instructions.
+- Do not include optional fields unless they are relevant to the specific request.
+- If the request is ambiguous, state your assumption and provide the answer for that interpretation.
+- Be thorough. The caller will construct API calls directly from your response. Missing a required field means a failed call.
+
+Return your answer in this format:
+ENDPOINT: <METHOD> <path>
+REQUIRED FIELDS:
+  - <field> (<type>) — <note>
+OPTIONAL BUT RELEVANT:
+  - <field> (<type>) — <note>
+PITFALLS:
+  - <pitfall description>
+EXAMPLE BODY:
+{...}
+MULTI-STEP NOTE: (only if applicable)
+  <ordered steps with dependencies>
+"""
 
 
 @dataclass(slots=True)
@@ -252,11 +289,25 @@ class TripletexService:
                     "or MVA suffix. Normalize examples like '998 877 665 MVA' to '998877665', or omit "
                     "organization_number and retry."
                 )
+            if "allerede en bruker" in message_text or "already exists" in message_text.lower():
+                return (
+                    f"Tripletex rejected {operation}: {message_text}. "
+                    "An entity with this email/identifier already exists. "
+                    "Use get_reference_data to look up the existing entity by email and reuse its ID."
+                )
+            if "arbeidsforhold" in message_text or "employment" in message_text.lower():
+                return (
+                    f"Tripletex rejected {operation}: {message_text}. "
+                    "The employee needs an active employment record. The run_salary_transaction tool "
+                    "handles this automatically — retry the same call."
+                )
             if "låst til mva-kode" in message_text or "locked to vat" in message_text.lower():
                 return (
                     f"Account is locked to a specific VAT code ({message_text}). "
                     "Use the locked vatType on this posting, or pick a different account. "
-                    "Do NOT attempt to modify the ledger account itself."
+                    "Do NOT attempt to modify the ledger account itself. "
+                    "To find an alternative account, use get_reference_data(accounts) and filter by number range "
+                    "(e.g. accounts with number between 6000-6999 for expenses). Do NOT use 'id' filters with '>' syntax."
                 )
 
         if entries:
@@ -283,6 +334,14 @@ class TripletexService:
         except TripletexApiError as exc:
             self._maybe_raise_tripletex_retry(operation=operation, exc=exc)
             raise
+
+    @staticmethod
+    def calculate_vat_split(payload: CalculateVatSplitInput) -> dict[str, Any]:
+        gross = payload.amount_including_vat
+        rate = payload.vat_percentage / 100
+        net = round(gross / (1 + rate), 2)
+        vat = round(gross - net, 2)
+        return {"gross": gross, "net": net, "vat": vat, "vat_percentage": payload.vat_percentage}
 
     @staticmethod
     def _normalize_generic_path_and_params(
@@ -524,7 +583,11 @@ class TripletexService:
             existing = self._values(
                 self.client.get(
                     "/employee",
-                    params={"email": payload.email, "count": 1, "fields": "id,firstName,lastName,email,employeeNumber,userType,version"},
+                    params={
+                        "email": payload.email,
+                        "count": 1,
+                        "fields": "id,firstName,lastName,email,employeeNumber,userType,version",
+                    },
                 )
             )
             if existing:
@@ -557,7 +620,20 @@ class TripletexService:
 
     def create_customer(self, payload: CreateCustomerInput) -> dict[str, Any]:
         self._require_step()
-        body = {"name": payload.name}
+        if payload.organization_number:
+            existing = self._values(
+                self.client.get(
+                    "/customer",
+                    params={
+                        "organizationNumber": payload.organization_number,
+                        "count": 1,
+                        "fields": "id,name,customerNumber,organizationNumber,email,version",
+                    },
+                )
+            )
+            if existing:
+                return existing[0]
+        body: dict[str, Any] = {"name": payload.name}
         if payload.organization_number:
             body["organizationNumber"] = payload.organization_number
         if payload.email:
@@ -568,6 +644,15 @@ class TripletexService:
             body["invoicesDueIn"] = payload.invoices_due_in
         if payload.invoices_due_in_type:
             body["invoicesDueInType"] = payload.invoices_due_in_type
+        if payload.address_line1 or payload.postal_code or payload.city:
+            address: dict[str, Any] = {}
+            if payload.address_line1:
+                address["addressLine1"] = payload.address_line1
+            if payload.postal_code:
+                address["postalCode"] = payload.postal_code
+            if payload.city:
+                address["city"] = payload.city
+            body["postalAddress"] = address
         response = self._call_with_tripletex_retry_hint(
             operation="customer creation",
             call=lambda: self.client.post("/customer", json_body=body),
@@ -576,6 +661,19 @@ class TripletexService:
 
     def create_supplier(self, payload: CreateSupplierInput) -> dict[str, Any]:
         self._require_step()
+        if payload.organization_number:
+            existing = self._values(
+                self.client.get(
+                    "/supplier",
+                    params={
+                        "organizationNumber": payload.organization_number,
+                        "count": 1,
+                        "fields": "id,name,supplierNumber,organizationNumber,email,version",
+                    },
+                )
+            )
+            if existing:
+                return existing[0]
         body = {"name": payload.name}
         if payload.organization_number:
             body["organizationNumber"] = payload.organization_number
@@ -1011,7 +1109,7 @@ class TripletexService:
 
     def add_travel_per_diem(self, payload: AddTravelPerDiemInput) -> dict[str, Any]:
         self._require_step()
-        body = {
+        body: dict[str, Any] = {
             "travelExpense": {"id": payload.travel_expense_id},
             "rateType": {"id": payload.rate_type_id},
             "rateCategory": {"id": payload.rate_category_id},
@@ -1021,14 +1119,107 @@ class TripletexService:
             "isDeductionForLunch": payload.is_deduction_for_lunch,
             "isDeductionForDinner": payload.is_deduction_for_dinner,
         }
+        if payload.overnight_accommodation is not None:
+            body["overnightAccommodation"] = payload.overnight_accommodation
         response = self._call_with_tripletex_retry_hint(
             operation="travel per-diem compensation creation",
             call=lambda: self.client.post("/travelExpense/perDiemCompensation", json_body=body),
         )
         return self._value(response)
 
+    def _ensure_division(self, start_date: str) -> int:
+        """Find an existing division or create one."""
+        divisions = self._values(self.client.get("/company/divisions", params={"count": 1}))
+        if divisions:
+            return int(divisions[0]["id"])
+        whoami = self._whoami()
+        company = self._value(
+            self.client.get(f"/company/{whoami['companyId']}", params={"fields": "id,organizationNumber"})
+        )
+        # Tripletex rejects the parent company's own org number for divisions
+        # ("Juridisk enhet kan ikke registreres som virksomhet/underenhet").
+        # Derive a sub-unit number by changing the last digit.
+        parent_org = company.get("organizationNumber", "000000000")
+        last_digit = int(parent_org[-1]) if parent_org and parent_org[-1].isdigit() else 0
+        sub_org = parent_org[:-1] + str((last_digit + 1) % 10)
+        municipalities = self._values(self.client.get("/municipality", params={"count": 1, "fields": "id,name"}))
+        municipality_id = municipalities[0]["id"] if municipalities else 262
+        div_body = {
+            "name": "Hovedvirksomhet",
+            "startDate": start_date,
+            "organizationNumber": sub_org,
+            "municipalityDate": start_date,
+            "municipality": {"id": municipality_id},
+        }
+        div_response = self._call_with_tripletex_retry_hint(
+            operation="division creation",
+            call=lambda: self.client.post("/division", json_body=div_body),
+        )
+        return int(self._value(div_response)["id"])
+
+    def create_employment(self, payload: CreateEmploymentInput) -> dict[str, Any]:
+        self._require_step()
+        existing = self._values(
+            self.client.get(
+                "/employee/employment",
+                params={"employeeId": payload.employee_id, "count": 1, "fields": "id,startDate,division(id,name)"},
+            )
+        )
+        if existing:
+            return existing[0]
+
+        employee = self._value(
+            self.client.get(f"/employee/{payload.employee_id}", params={"fields": "id,version,dateOfBirth"})
+        )
+        if not employee.get("dateOfBirth"):
+            self.client.put(
+                f"/employee/{payload.employee_id}",
+                json_body={"id": employee["id"], "version": employee["version"], "dateOfBirth": "1990-01-01"},
+            )
+
+        division_id = payload.division_id or self._ensure_division(payload.start_date)
+
+        emp_body: dict[str, Any] = {
+            "employee": {"id": payload.employee_id},
+            "startDate": payload.start_date,
+            "division": {"id": division_id},
+            "isMainEmployer": payload.is_main_employer,
+        }
+        response = self._call_with_tripletex_retry_hint(
+            operation="employment creation",
+            call=lambda: self.client.post("/employee/employment", json_body=emp_body),
+        )
+        return self._value(response)
+
+    def _ensure_employee_employment(self, employee_id: int, start_date: str) -> None:
+        employments = self._values(
+            self.client.get(
+                "/employee/employment", params={"employeeId": employee_id, "count": 1, "fields": "id,startDate"}
+            )
+        )
+        if employments:
+            return
+
+        employee = self._value(self.client.get(f"/employee/{employee_id}", params={"fields": "id,version,dateOfBirth"}))
+        if not employee.get("dateOfBirth"):
+            self.client.put(
+                f"/employee/{employee_id}",
+                json_body={"id": employee["id"], "version": employee["version"], "dateOfBirth": "1990-01-01"},
+            )
+
+        division_id = self._ensure_division(start_date)
+
+        emp_body: dict[str, Any] = {
+            "employee": {"id": employee_id},
+            "startDate": start_date,
+            "division": {"id": division_id},
+        }
+        self.client.post("/employee/employment", json_body=emp_body)
+
     def run_salary_transaction(self, payload: RunSalaryTransactionInput) -> dict[str, Any]:
         self._require_step()
+        for payslip in payload.payslips:
+            self._ensure_employee_employment(payslip.employee_id, payslip.date)
         payslips = []
         for payslip in payload.payslips:
             specifications = [
@@ -1154,9 +1345,36 @@ class TripletexService:
 
         return {"dimension": dimension, "values": created_values}
 
+    @staticmethod
+    def _sanitize_reference_filters(reference: str, filters: dict[str, Any]) -> dict[str, Any]:
+        """Validate and sanitize filters before passing to Tripletex API."""
+        sanitized = dict(filters)
+        for key, value in list(sanitized.items()):
+            str_value = str(value)
+            if "%" in str_value or "*" in str_value or ">" in str_value or "<" in str_value:
+                if key in ("numberFrom", "numberTo", "accountNumberFrom", "accountNumberTo"):
+                    continue
+                raise ModelRetry(
+                    f"Filter '{key}={value}' contains wildcard/pattern characters. "
+                    f"Tripletex filters require exact values. "
+                    f"For account ranges, use numberFrom/numberTo with integer values "
+                    f'(e.g. filters={{"numberFrom": 8000, "numberTo": 8999}}).'
+                )
+        if reference == "accounts" and "number" in sanitized:
+            num_val = sanitized["number"]
+            if not isinstance(num_val, int):
+                try:
+                    sanitized["number"] = int(str(num_val).strip())
+                except (ValueError, TypeError):
+                    raise ModelRetry(
+                        f"Filter 'number={num_val}' is not a valid integer for account lookup. "
+                        f"Use an exact account number (e.g. 2400) or use numberFrom/numberTo for ranges."
+                    )
+        return sanitized
+
     def get_reference_data(self, payload: ReferenceLookupInput) -> dict[str, Any]:
         self._require_step()
-        filters = dict(payload.filters)
+        filters = self._sanitize_reference_filters(payload.reference, dict(payload.filters))
 
         if payload.reference == "whoami":
             return self._whoami()
@@ -1348,6 +1566,78 @@ class TripletexService:
 
         raise ValueError(f"Unsupported reference lookup: {payload.reference}")
 
+    async def find_api(self, need: str) -> dict[str, Any]:
+        """Spawn a sub-agent to find the right Tripletex API endpoint for a given need."""
+        self._require_step()
+
+        from ai_accounting_agent import gemini
+        from ai_accounting_agent.api_index import get_api_index
+
+        index = get_api_index()
+        matched_tags, relevant_docs = index.search(need, max_groups=5)
+
+        log_event(
+            "find_api_search",
+            run_id=self.run_id,
+            need=need,
+            matched_tags=matched_tags,
+            doc_chars=len(relevant_docs),
+        )
+
+        if not relevant_docs:
+            return {
+                "guidance": "No matching API endpoints found for this need. Try rephrasing or use search_tripletex_reference.",
+                "searched_tags": [],
+                "subagent_duration_ms": 0,
+            }
+
+        sub_agent: Agent[None] = Agent(
+            gemini.build_google_model(),
+            instructions=FIND_API_SYSTEM_PROMPT,
+            output_type=str,
+        )
+
+        started = time.perf_counter()
+        result = await sub_agent.run(f"Relevant API documentation:\n\n{relevant_docs}\n\n---\n\nWhat I need: {need}")
+        duration_ms = round((time.perf_counter() - started) * 1000)
+
+        guidance = result.output
+        usage = result.usage()
+
+        log_event(
+            "find_api_subagent_result",
+            run_id=self.run_id,
+            need=need,
+            matched_tags=matched_tags,
+            duration_ms=duration_ms,
+            guidance_length=len(guidance),
+            guidance_preview=guidance[:2000],
+            usage=usage,
+        )
+
+        return {
+            "guidance": guidance,
+            "searched_tags": matched_tags,
+            "subagent_duration_ms": duration_ms,
+        }
+
+    def raw_api_call(self, payload: RawApiCallInput) -> dict[str, Any]:
+        """Execute an arbitrary Tripletex API call."""
+        self._require_step()
+        path = payload.path
+        if not path.startswith("/"):
+            path = f"/{path}"
+
+        return self._call_with_tripletex_retry_hint(
+            operation=f"{payload.method} {path}",
+            call=lambda: self.client.request(
+                method=payload.method,
+                path=path,
+                params=payload.query_params,
+                json_body=payload.body,
+            ),
+        )
+
 
 def register_tripletex_tools(agent: Agent[Any]) -> None:
     def _service(ctx: RunContext[Any]) -> TripletexService:
@@ -1480,6 +1770,9 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         REQUIRED: first_name, last_name. department_id defaults to the company's first department if omitted.
         user_type defaults to "STANDARD". Use "EXTENDED" for full access, "NO_ACCESS" for no login.
 
+        If an employee with the given email already exists, returns the existing employee (no duplicate created).
+        To set a start date for the employee, call create_employment after this tool.
+        Start dates live on the employment record, not on the employee entity.
         To make the employee an admin, call grant_employee_privileges after this tool.
         """
         return _service(ctx).create_employee(payload)
@@ -1503,6 +1796,8 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         WHEN TO USE: Before create_order/create_invoice, or when task asks to register a customer.
         REQUIRED: name. Optional: organization_number (auto-normalized to 9 digits), email,
         invoice_send_method (e.g. "EMAIL"), invoices_due_in + invoices_due_in_type (e.g. 14, "DAYS").
+        ADDRESS: If the task provides an address, parse it into address_line1, postal_code, and city.
+        Example: "Torggata 50, 9008 Tromsø" → address_line1="Torggata 50", postal_code="9008", city="Tromsø".
         Returns the created customer with its id — reuse this id in subsequent tools.
         """
         return _service(ctx).create_customer(payload)
@@ -1529,9 +1824,8 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         Optional: number (SKU), vat_type_id (defaults to 6 = 0% in non-VAT companies).
         In non-VAT-registered companies only vat_type_id=6 is accepted.
 
-        IMPORTANT: If the prompt specifies a product number, first check if it already exists:
-          get_reference_data(reference="products", filters={"number": "6744"})
-        If the product exists, reuse its ID. Only create a new product if it doesn't exist.
+        This tool auto-checks for existing products by number — if a product with the given number
+        already exists, it returns the existing product without creating a duplicate. No pre-lookup needed.
         """
         return _service(ctx).create_product(payload)
 
@@ -1847,6 +2141,11 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         WHEN TO USE: When the task asks for per-diem or daily allowance on a trip.
         REQUIRED: travel_expense_id, rate_type_id, rate_category_id, location, count.
 
+        OVERNIGHT ACCOMMODATION (critical for multi-day trips):
+        - For multi-day trips with overnight stays: set overnight_accommodation="HOTEL" (or "NONE" if no accommodation provided)
+        - For day trips: omit overnight_accommodation (leave as None)
+        - If you omit this on a multi-day trip, transition_travel_expense(deliver) will FAIL with "Sone må fylles ut"
+
         PREREQUISITE LOOKUPS (do these before calling):
           get_reference_data(reference="travel_per_diem_rates", filters={"dateFrom": "2026-01-01", "dateTo": "2026-12-31"})
         Each returned row has: id (= rate_type_id), rate (daily NOK), rateCategory.id (= rate_category_id), rateCategory.name.
@@ -1977,35 +2276,108 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
     def get_reference_data(ctx: RunContext[Any], payload: ReferenceLookupInput) -> dict[str, Any]:
         """Fetch common reference/lookup data on demand.
 
-        COMMON PATTERNS:
+        COMMON PATTERNS (no filters needed):
         - get_reference_data(reference="whoami") → employeeId, companyId
-        - get_reference_data(reference="accounts") → full chart of accounts (up to 200)
-        - get_reference_data(reference="accounts", filters={"number": 2400}) → specific account by number
-        - get_reference_data(reference="vat_types") → all VAT codes with id, name, percentage
         - get_reference_data(reference="vat_settings") → company VAT registration status
-        - get_reference_data(reference="customers") → existing customers
-        - get_reference_data(reference="suppliers") → existing suppliers
-        - get_reference_data(reference="products") → existing products
-        - get_reference_data(reference="projects") → existing projects (includes isFixedPrice, fixedprice)
-        - get_reference_data(reference="employees") → existing employees
-        - get_reference_data(reference="departments") → departments
+        - get_reference_data(reference="vat_types") → all VAT codes with id, name, percentage
         - get_reference_data(reference="invoice_payment_types") → payment type IDs for register_invoice_payment
-        - get_reference_data(reference="travel_cost_categories") → cost category IDs for add_travel_expense_cost
-        - get_reference_data(reference="travel_payment_types") → payment type IDs for add_travel_expense_cost
+        - get_reference_data(reference="travel_cost_categories") → cost category IDs
+        - get_reference_data(reference="travel_payment_types") → payment type IDs
         - get_reference_data(reference="currencies") → currency IDs (NOK=1, SEK=2, EUR=5, etc.)
-        - get_reference_data(reference="voucher_types") → voucher type IDs
-        - get_reference_data(reference="travel_expenses") → existing travel expenses
-        - get_reference_data(reference="salary_types") → salary type IDs (Fastlønn=2000, Bonus=2002, etc.)
-        - get_reference_data(reference="divisions") → company divisions/virksomheter
-        - get_reference_data(reference="travel_mileage_rates", filters={"dateFrom": "...", "dateTo": "..."}) → mileage rate rows
-        - get_reference_data(reference="travel_per_diem_rates", filters={"dateFrom": "...", "dateTo": "..."}) → per-diem rate rows
-        - get_reference_data(reference="countries") → country IDs for addresses
-        - get_reference_data(reference="municipalities") → municipality IDs for divisions
-        - get_reference_data(reference="events") → available webhook event keys
+        - get_reference_data(reference="salary_types") → salary type IDs (Fastlønn=2000, Bonus=2002)
+        - get_reference_data(reference="departments") → departments
         - get_reference_data(reference="accounting_periods") → accounting period IDs
         - get_reference_data(reference="bank_accounts") → bank account IDs with account numbers
+        - get_reference_data(reference="events") → available webhook event keys
 
-        For timesheet activities, use the dedicated get_timesheet_activities tool instead.
-        The filters dict accepts raw Tripletex query parameters (e.g. {"number": 2400}).
+        WITH FILTERS — valid filter keys per reference type:
+        - accounts: number (exact integer), numberFrom/numberTo (integer range), isBankAccount (bool)
+          Examples: filters={"number": 2400} or filters={"numberFrom": 8000, "numberTo": 8999}
+          Do NOT use wildcards (%) or string patterns — number must be an exact integer or use range.
+        - customers: organizationNumber (exact 9 digits), customerName (string), email (string)
+        - suppliers: organizationNumber (exact 9 digits), supplierNumber (integer)
+          Note: /supplier has NO name filter — use organizationNumber or supplierNumber.
+        - employees: email (string), firstName (string), lastName (string), departmentId (integer)
+        - products: number (string, exact match), name (string)
+        - projects: name (string), number (string), customerId (integer)
+        - travel_per_diem_rates: dateFrom/dateTo (YYYY-MM-DD) — recommended to include date filters
+        - travel_mileage_rates: dateFrom/dateTo (YYYY-MM-DD) — recommended to include date filters
+
+        RULES:
+        - All filter values must be exact matches (integers or strings). No wildcards, patterns, or SQL syntax.
+        - To find accounts in a range (e.g. 8000-8999), use numberFrom + numberTo, NOT number with a pattern.
+        - For timesheet activities, use the dedicated get_timesheet_activities tool instead.
         """
         return _service(ctx).get_reference_data(payload)
+
+    @agent.tool
+    @log_tool
+    def calculate_vat_split(ctx: RunContext[Any], payload: CalculateVatSplitInput) -> dict[str, Any]:
+        """Split a gross amount (including VAT) into net and VAT components.
+
+        WHEN TO USE: When booking supplier invoices where the amount is given INCLUDING VAT.
+        Example: amount_including_vat=61150, vat_percentage=25 → net=48920.0, vat=12230.0
+
+        Use the returned 'net' for the expense posting and 'gross' for the supplier payable posting.
+        When the account has a locked vatType, use amountGross=gross (Tripletex auto-extracts VAT).
+        This is a pure calculation — no Tripletex API call is made.
+        """
+        return TripletexService.calculate_vat_split(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def create_employment(ctx: RunContext[Any], payload: CreateEmploymentInput) -> dict[str, Any]:
+        """Create an employment record for an employee (sets their start date and links to a division).
+
+        WHEN TO USE: After create_employee, when the task specifies a start date for the employee.
+        Start dates live on the EMPLOYMENT record, not on the employee entity.
+        REQUIRED: employee_id, start_date (YYYY-MM-DD).
+        division_id is auto-resolved: uses existing division or creates one.
+        Returns existing employment if one already exists (idempotent).
+
+        FLOW: create_employee → create_employment(employee_id, start_date)
+        """
+        return _service(ctx).create_employment(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    async def find_api(ctx: RunContext[Any], payload: FindApiInput) -> dict[str, Any]:
+        """Ask an API specialist sub-agent to find the right Tripletex endpoint.
+
+        The sub-agent reads the actual Tripletex API specification and returns exact
+        endpoint details with field names, types, pitfalls, and example bodies.
+
+        WHEN TO USE:
+        - No curated tool exists for the action you need (e.g. creating accounts, approving invoices, closing periods)
+        - You are UNCERTAIN about the correct endpoint, field names, or required parameters
+        - A curated tool failed and you need to understand why
+        - The task involves an unusual or complex API operation
+        - You want to verify how an endpoint works BEFORE making the call
+
+        WHEN NOT TO USE:
+        - You are confident a curated tool handles the exact operation correctly
+        - For simple reference lookups (use get_reference_data instead)
+
+        Input: Natural language description of what you need. Include error messages from failed attempts if retrying.
+        Output: Structured endpoint guidance with method, path, required fields, pitfalls, and example body.
+
+        Always call this BEFORE raw_api_call. The sub-agent finds the endpoint, you execute it.
+        When in doubt, use this tool — it's cheaper than a failed API call.
+        """
+        return await _service(ctx).find_api(payload.need)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def raw_api_call(ctx: RunContext[Any], payload: RawApiCallInput) -> dict[str, Any]:
+        """Execute a Tripletex API call based on find_api guidance.
+
+        WHEN TO USE: After find_api has provided the endpoint, method, and required fields.
+        This is the execution partner for find_api — find_api discovers, raw_api_call executes.
+
+        NEVER call this without first calling find_api to confirm the endpoint shape.
+        If this returns a 4xx error, call find_api again with the error message included,
+        then retry once with the corrected payload. Max 2 total attempts per endpoint.
+
+        Returns the full API response body.
+        """
+        return _service(ctx).raw_api_call(payload)

@@ -299,12 +299,12 @@ class PredictorParameters(StrictBaseModel):
     prior_weight: float = 0.34
     exact_weight: float = 0.22
     relaxed_weight: float = 0.16
-    round_transition_weight: float = 0.0
+    round_transition_weight: float = 0.28
     transition_weight: float = 0.20
     nearest_weight: float = 0.08
     cross_seed_nearest_weight: float = 0.04
     transition_alpha: float = 2.0
-    round_transition_alpha: float = 0.9
+    round_transition_alpha: float = 0.7
     latent_proxy_strength: float = 0.20
     smoothing_base: float = 0.03
     smoothing_dynamic_scale: float = 0.018
