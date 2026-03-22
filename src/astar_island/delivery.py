@@ -24,6 +24,7 @@ from astar_island.planner import (
     build_two_phase_observation_plan,
 )
 from astar_island.predictor import BaselinePredictor
+from astar_island.simulator import SimulatorPredictor
 from astar_island.storage import (
     load_observations,
     load_optional_observation_plan,
@@ -219,7 +220,7 @@ def collect_two_phase_observations(
     client: AstarIslandClient,
     artifact_dir: Path,
     manifest: DeliveryRunManifest,
-    predictor: BaselinePredictor,
+    predictor: SimulatorPredictor,
     force_resume: bool = False,
 ) -> tuple[ObservationPlan, ObservationCollection, DeliveryRunManifest]:
     round_detail = client.get_round(manifest.round_id)
@@ -339,17 +340,20 @@ def deliver_round(
         _load_local_round_artifacts,
         fit_predictor_parameters,
     )
+    from astar_island.calibration import build_calibration_data, build_similarity_calibration, save_calibration
 
     local_artifacts = _load_local_round_artifacts(settings.data_dir)
-    calibrated_parameters = fit_predictor_parameters(local_artifacts)
-    archive_rounds = _archive_rounds_from_artifacts(local_artifacts)
-    predictor = BaselinePredictor(parameters=calibrated_parameters, archive_rounds=archive_rounds)
+    planning_predictor = SimulatorPredictor(calibration_weight=0.0)
+
+    # Note: Calibration generation skipped to reduce delivery latency.
+    calibration = None
+    allowed_round_numbers: set[int] | None = None
     try:
         _, observations, manifest = collect_two_phase_observations(
             client=client,
             artifact_dir=resolved_artifact_dir,
             manifest=manifest,
-            predictor=predictor,
+            predictor=planning_predictor,
             force_resume=force_resume,
         )
     except RuntimeError as exc:
@@ -367,7 +371,28 @@ def deliver_round(
         )
         save_run_manifest(resolved_artifact_dir, manifest)
 
-    final_predictions, diagnostics = predictor.predict_with_diagnostics(round_detail, observations)
+    adaptive_calibration = None
+    try:
+        adaptive_calibration = build_similarity_calibration(
+            round_detail,
+            observations,
+            local_artifacts,
+            client=client,
+            analysis_cache_dir=settings.data_dir / "analysis_cache",
+            allowed_round_numbers=allowed_round_numbers,
+        )
+        if adaptive_calibration is not None:
+            calibration = adaptive_calibration
+            save_calibration(resolved_artifact_dir / "calibration.json", calibration)
+    except Exception:
+        adaptive_calibration = None
+
+    simulator = SimulatorPredictor(calibration_weight=0.0) if adaptive_calibration is not None else SimulatorPredictor(calibration_weight=0.0)
+    final_predictions, diagnostics = simulator.predict_with_diagnostics(
+        round_detail,
+        observations,
+        calibration=None,
+    )
     save_predictions(resolved_artifact_dir, final_predictions)
     validation = validate_prediction_bundle(
         final_predictions,
@@ -383,6 +408,7 @@ def deliver_round(
         prediction_model_name=final_predictions.model_name,
         prediction_created_at=final_predictions.created_at,
         prediction_validation=validation,
+        simulation_parameters=simulator.last_simulation_parameters,
     )
     save_run_manifest(resolved_artifact_dir, manifest)
 

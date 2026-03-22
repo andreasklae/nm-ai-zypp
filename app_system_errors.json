@@ -1,0 +1,37 @@
+[
+  {
+    "insertId": "32zfxvfbo3zvi",
+    "jsonPayload": {
+      "arguments": {
+        "kwargs": {
+          "cache_key": null,
+          "params": {
+            "invoiceId": 2147661835
+          },
+          "path": "/ledger/posting"
+        },
+        "positional_args": []
+      },
+      "duration_ms": 74,
+      "error_message": "/ledger/posting requires query params dateFrom, dateTo. Use dateFrom/dateTo for posting reads. To view postings for a specific voucher, use GET /ledger/voucher/{id}?fields=postings(*) instead of querying /ledger/posting.",
+      "error_type": "ModelRetry",
+      "event": "tool_error",
+      "run_id": "4f47e3d777e84b05b96ef41131553417",
+      "tool": "tripletex_get"
+    },
+    "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+    "receiveTimestamp": "2026-03-22T01:14:46.700338200Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "ai-accounting-agent",
+        "location": "europe-west4",
+        "project_id": "ai-nm26osl-1850",
+        "revision_name": "ai-accounting-agent-00047-8k5",
+        "service_name": "ai-accounting-agent"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "ERROR",
+    "timestamp": "2026-03-22T01:14:46.700338200Z"
+  }
+]

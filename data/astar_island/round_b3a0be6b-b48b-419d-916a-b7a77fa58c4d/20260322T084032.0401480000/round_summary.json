@@ -1,0 +1,14 @@
+{
+  "id": "b3a0be6b-b48b-419d-916a-b7a77fa58c4d",
+  "status": "active",
+  "round_number": 21,
+  "map_width": 40,
+  "map_height": 40,
+  "seeds_count": null,
+  "event_date": "2026-03-22",
+  "prediction_window_minutes": 165,
+  "started_at": "2026-03-22T06:03:27.174260+00:00",
+  "closes_at": "2026-03-22T08:48:27.174260+00:00",
+  "round_weight": 2.786,
+  "created_at": "2026-03-22T06:03:27.534678+00:00"
+}

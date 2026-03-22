@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from ai_accounting_agent.tests.live_api_support import (
-    REALISTIC_SCENARIO_DIR,
     ScenarioSpec,
     cleanup_realistic_scenarios,
     sanitize_for_artifact,

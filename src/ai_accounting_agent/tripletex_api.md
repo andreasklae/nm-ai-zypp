@@ -547,6 +547,39 @@ GET /activity/%3EforTimeSheet?projectId={projectId}&employeeId={employeeId}&date
 
 Returns activities like "Fakturerbart arbeid" (id=5588996), "Prosjektadministrasjon" (id=5588995).
 
+### Create project-specific activity
+
+To create a new activity for a specific project, use `POST /project/projectActivity`:
+
+```json
+{
+  "project": { "id": 12345 },
+  "activity": {
+    "name": "My Activity Name",
+    "activityType": "PROJECT_SPECIFIC_ACTIVITY"
+  }
+}
+```
+
+Key rules:
+- `activityType` MUST be `"PROJECT_SPECIFIC_ACTIVITY"` — other types cannot be created via this endpoint.
+- The `activity` object is nested inside the projectActivity body.
+- Do NOT set `isProjectActivity`, `isGeneral`, or `isChargeable` on the activity — they conflict with `activityType`.
+- Do NOT use `POST /activity` for project-specific activities — it will fail.
+
+### Account balances / ledger (hovedbok)
+
+To get account-level ledger entries for a period:
+
+```text
+GET /ledger?dateFrom=2026-01-01&dateTo=2026-01-31&count=1000
+```
+
+Required: `dateFrom` and `dateTo`. Optional: `accountId`, `supplierId`, `customerId`, `departmentId`, `projectId`.
+
+Returns posting entries grouped by account. Use this for cost analysis and period comparisons.
+Do NOT use `/ledger/account/balance` or `/ledger/posting/>sum` — they do not exist.
+
 ## 6. Ledger Voucher (Core Accounting)
 
 This is the most important endpoint family for accounting tasks.

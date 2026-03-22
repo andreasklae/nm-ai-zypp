@@ -15,6 +15,7 @@ dependencies = [
     "sentry-sdk>=2.30.0",
     "uvicorn>=0.35.0",
     "pydantic>=2.12.5",
+    "mcp>=1.6.0",
 ]
 
 [project.scripts]
@@ -35,10 +36,10 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["ai_accounting_agent", "astar_island"]
+include = ["ai_accounting_agent", "ai_accounting_agent.*", "astar_island", "tripletex_mcp"]
 
 [tool.setuptools.package-data]
-ai_accounting_agent = ["*.md", "*.pdf", "*.json"]
+ai_accounting_agent = ["*.md", "*.pdf", "*.json", "v2/*.csv", "v2/*.md", "v2/references/*.md"]
 
 [tool.ruff]
 line-length = 120

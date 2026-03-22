@@ -1,0 +1,141 @@
+{
+  "scenario_id": "project_creation_es",
+  "trace_token": "de27700ce0",
+  "run_id": "3c1400cc07e4471598f37f45235b9009",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tripletex_http_request",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "get_today_date",
+    "announce_step",
+    "search_tripletex_reference",
+    "create_project",
+    "announce_step",
+    "announce_step"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_today_date",
+            "search_tripletex_reference"
+          ],
+          "success_criteria": "Project created with name Eval Proyecto de27700ce0 and start date today",
+          "task_understanding": "Create a project named 'Eval Proyecto de27700ce0' with a start date of today. No additional actions."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "search_tripletex_reference",
+      "arguments": {
+        "kwargs": {
+          "max_results": 5,
+          "query": "POST /project"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": null,
+            "name": "Eval Proyecto de27700ce0",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_project"
+          ],
+          "success_criteria": "Project 'Eval Proyecto de27700ce0' is successfully created.",
+          "task_understanding": "Create the requested project using today's date as the start date."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [],
+          "success_criteria": "Finished processing task.",
+          "task_understanding": "Done with the project creation."
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 2,
+  "tripletex_write_count": 1,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": false,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": false,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": false,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "project_created": {
+      "passed": true,
+      "details": "Expected project name present in /project listing."
+    }
+  }
+}

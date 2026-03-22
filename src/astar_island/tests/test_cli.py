@@ -61,6 +61,7 @@ def test_cli_predict_writes_prediction_bundle(tmp_path) -> None:
     bundle = load_predictions(tmp_path)
     assert bundle.round_id == detail.id
     assert len(bundle.seeds) == detail.seeds_count
+    assert bundle.model_name == "analytic-simulator-v3"
 
 
 def test_cli_backtest_writes_summary(monkeypatch, tmp_path) -> None:
@@ -72,6 +73,7 @@ def test_cli_backtest_writes_summary(monkeypatch, tmp_path) -> None:
     save_observations(artifact_dir, build_mock_observations(detail, variant="mixed"))
 
     monkeypatch.setenv("ASTAR_ISLAND_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ASTAR_ISLAND_ACCESS_TOKEN", "")
 
     exit_code = main(["backtest", "--round-id", str(detail.round_number), "--artifact-dir", str(output_dir)])
 

@@ -1,0 +1,46 @@
+{
+  "scenario_id": "attachment_understanding_no_write",
+  "trace_token": "1cd52c2559",
+  "run_id": "4e9ff3b2653848d295de1e9ecae2287e",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "attachment_extractor_availability",
+    "agent_messages",
+    "attachment_extraction_status",
+    "task_error",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [],
+  "tool_argument_summary": [],
+  "tripletex_http_call_count": 0,
+  "tripletex_write_count": 0,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": false,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": false,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": false,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "no_tripletex_writes": {
+      "passed": true,
+      "details": "tripletex_write_count=0"
+    }
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "status": "ok",
+  "project_id": "ai-nm26osl-1850",
+  "service_name": "ai-accounting-agent",
+  "seed_filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"ai-accounting-agent\" AND jsonPayload.prompt:\"trace_token=1cd52c2559\"",
+  "run_filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"ai-accounting-agent\" AND jsonPayload.run_id=\"4e9ff3b2653848d295de1e9ecae2287e\"",
+  "window_filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"ai-accounting-agent\" AND timestamp>=\"2026-03-21T20:32:38.807199Z\" AND timestamp<=\"2026-03-21T20:32:44.636879Z\"",
+  "run_id": "4e9ff3b2653848d295de1e9ecae2287e",
+  "entries": [
+    {
+      "insertId": "69bf0067000abee502c84156",
+      "labels": {
+        "instanceId": "00da6cd2c45046e2e556094f1bd9477d011594b6f1c0bdcf2ed3f4dc782d0dcb4cfc7857d79ef4558d1750ab15066c5764fef28b984acc34451d28091aba5903babd82d8d40bd096d02585e134f7"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/run.googleapis.com%2Fstdout",
+      "receiveTimestamp": "2026-03-21T20:32:39.710058704Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "textPayload": "INFO:     169.254.169.126:63056 - \"POST /solve HTTP/1.1\" 200 OK",
+      "timestamp": "2026-03-21T20:32:39.704229Z"
+    },
+    {
+      "insertId": "1pbzfbsf6dgiiu",
+      "jsonPayload": {
+        "agent_message_count": 1,
+        "agent_output": "Task attempt ended after exhausting recovery: status_code: 400, model_name: gemini-3.1-pro-preview, body: {'error': {'code': 400, 'message': 'The document has no pages.', 'status': 'INVALID_ARGUMENT'}}",
+        "completed_with_recovery": true,
+        "duration_ms": 727,
+        "event": "task_complete",
+        "file_count": 1,
+        "files": [
+          {
+            "filename": "supplier_invoice_pdf.pdf",
+            "mime_type": "application/pdf",
+            "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+            "size_bytes": 61
+          }
+        ],
+        "model": "gemini-3.1-pro-preview",
+        "path": "/solve",
+        "prompt": "Les markdown-vedlegget, oppsummer kort hva dokumentet handler om, og ikke opprett eller endre noe i Tripletex. trace_token=1cd52c2559",
+        "recovery_error_message": "status_code: 400, model_name: gemini-3.1-pro-preview, body: {'error': {'code': 400, 'message': 'The document has no pages.', 'status': 'INVALID_ARGUMENT'}}",
+        "recovery_error_type": "ModelHTTPError",
+        "run_id": "4e9ff3b2653848d295de1e9ecae2287e",
+        "status": 200,
+        "usage": null
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:32:39.636879534Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:32:39.636879534Z"
+    },
+    {
+      "insertId": "utfpzjfaa0ahf",
+      "jsonPayload": {
+        "agent_message_count": 1,
+        "duration_ms": 727,
+        "error_message": "status_code: 400, model_name: gemini-3.1-pro-preview, body: {'error': {'code': 400, 'message': 'The document has no pages.', 'status': 'INVALID_ARGUMENT'}}",
+        "error_type": "ModelHTTPError",
+        "event": "task_error",
+        "file_count": 1,
+        "files": [
+          {
+            "filename": "supplier_invoice_pdf.pdf",
+            "mime_type": "application/pdf",
+            "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+            "size_bytes": 61
+          }
+        ],
+        "graceful_completion": true,
+        "model": "gemini-3.1-pro-preview",
+        "path": "/solve",
+        "prompt": "Les markdown-vedlegget, oppsummer kort hva dokumentet handler om, og ikke opprett eller endre noe i Tripletex. trace_token=1cd52c2559",
+        "run_id": "4e9ff3b2653848d295de1e9ecae2287e"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:32:39.533922827Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "ERROR",
+      "timestamp": "2026-03-21T20:32:39.533922827Z"
+    },
+    {
+      "insertId": "hic8q3f9few20",
+      "jsonPayload": {
+        "attachment_count": 1,
+        "attachment_filenames": [
+          "supplier_invoice_pdf.pdf"
+        ],
+        "event": "attachment_extraction_status",
+        "extractor_available": true,
+        "extractor_used": false,
+        "fallback_reason": "extractor_not_used",
+        "fallback_used": true,
+        "run_id": "4e9ff3b2653848d295de1e9ecae2287e"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:32:39.454449311Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:32:39.454449311Z"
+    },
+    {
+      "insertId": "aunb2wf9zc7jy",
+      "jsonPayload": {
+        "event": "agent_messages",
+        "message_count": 1,
+        "messages": [
+          {
+            "kind": "request",
+            "model_name": null,
+            "parts": [
+              {
+                "content": [
+                  "Les markdown-vedlegget, oppsummer kort hva dokumentet handler om, og ikke opprett eller endre noe i Tripletex. trace_token=1cd52c2559",
+                  {
+                    "_identifier": null,
+                    "data": {
+                      "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+                      "size": 61,
+                      "type": "bytes"
+                    },
+                    "kind": "binary",
+                    "media_type": "application/pdf",
+                    "vendor_metadata": null
+                  }
+                ],
+                "part_kind": "user-prompt"
+              }
+            ],
+            "provider_name": null,
+            "run_id": "0bb41fa4-0f52-4078-af97-0fcccff36bd9",
+            "timestamp": "2026-03-21 20:32:38.997684+00:00"
+          }
+        ],
+        "model": "gemini-3.1-pro-preview",
+        "run_id": "4e9ff3b2653848d295de1e9ecae2287e",
+        "usage": null
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:32:39.401991961Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:32:39.401991961Z"
+    },
+    {
+      "insertId": "1l7uanvf9cjvtl",
+      "jsonPayload": {
+        "attachment_count": 1,
+        "event": "attachment_extractor_availability",
+        "extractor_available": true,
+        "run_id": "4e9ff3b2653848d295de1e9ecae2287e"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:32:39.013278439Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:32:39.013278439Z"
+    },
+    {
+      "insertId": "1hbthmxf5cq2oj",
+      "jsonPayload": {
+        "auth_present": true,
+        "event": "request_received",
+        "file_count": 1,
+        "files": [
+          {
+            "filename": "supplier_invoice_pdf.pdf",
+            "mime_type": "application/pdf",
+            "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+            "size_bytes": 61
+          }
+        ],
+        "model": "gemini-3.1-pro-preview",
+        "path": "/solve",
+        "prompt": "Les markdown-vedlegget, oppsummer kort hva dokumentet handler om, og ikke opprett eller endre noe i Tripletex. trace_token=1cd52c2559",
+        "run_id": "4e9ff3b2653848d295de1e9ecae2287e",
+        "tripletex_base_url": "https://kkpqfuj-amager.tripletex.dev/v2"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:32:38.807199491Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:32:38.807199491Z"
+    }
+  ]
+}

@@ -145,6 +145,22 @@ class AstarIslandClient:
             probes=self.probe_round_result_data(round_id),
         )
 
+    def get_my_rounds(self) -> list[dict]:
+        """Return rounds enriched with team scores, rank, and query budget."""
+        self._raise_if_missing_token()
+        response = self._request_with_retry("GET", "/my-rounds")
+        return response.json()
+
+    def get_analysis(self, round_id: RoundId, seed_index: int) -> dict:
+        """Fetch post-round ground truth comparison for a completed seed.
+
+        Returns dict with keys: prediction, ground_truth, score, width, height, initial_grid.
+        Only available after a round is completed or in scoring.
+        """
+        self._raise_if_missing_token()
+        response = self._request_with_retry("GET", f"/analysis/{round_id}/{seed_index}")
+        return response.json()
+
     def simulate(self, request: ViewportRequest) -> SimulationResult:
         self._raise_if_missing_token()
         response = self._request_with_retry(

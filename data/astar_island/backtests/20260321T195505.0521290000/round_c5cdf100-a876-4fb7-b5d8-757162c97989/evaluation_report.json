@@ -1,0 +1,102 @@
+{
+  "round_id": "c5cdf100-a876-4fb7-b5d8-757162c97989",
+  "round_number": 8,
+  "artifact_dir": "data/astar_island/backtests/20260321T195505.0521290000/round_c5cdf100-a876-4fb7-b5d8-757162c97989",
+  "model_name": "hierarchical-empirical-v5-adaptive",
+  "evaluation_mode": "holdout_only",
+  "official_round_status": "completed",
+  "official_score_metadata": {
+    "leaderboard_entry_count": 361,
+    "probe_statuses": {
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/scores": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/score": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/results": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/result": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/submissions": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/leaderboard": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/ground-truth": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/ground_truth": 404,
+      "/rounds/c5cdf100-a876-4fb7-b5d8-757162c97989/truth": 404
+    }
+  },
+  "prediction_validation": {
+    "valid": true,
+    "seed_count": 5,
+    "map_height": 40,
+    "map_width": 40,
+    "class_count": 6,
+    "min_probability": 0.01,
+    "max_sum_error": 0.0
+  },
+  "holdout_metrics": {
+    "overall_nll": 0.592079,
+    "changed_cell_nll": 1.470962,
+    "observed_cell_count": 2250,
+    "changed_cell_count": 433,
+    "class_average_probability": {
+      "empty": 0.644366,
+      "forest": 0.608394,
+      "settlement": 0.178124,
+      "ruin": 0.028221,
+      "mountain": 0.95,
+      "port": 0.092753
+    },
+    "class_average_nll": {
+      "empty": 0.474276,
+      "forest": 0.674803,
+      "settlement": 1.808984,
+      "ruin": 3.569293,
+      "mountain": 0.051293,
+      "port": 2.377812
+    }
+  },
+  "legacy_holdout_metrics": {
+    "overall_nll": 0.656528,
+    "changed_cell_nll": 1.631664,
+    "observed_cell_count": 2250,
+    "changed_cell_count": 433,
+    "class_average_probability": {
+      "empty": 0.593689,
+      "forest": 0.675338,
+      "settlement": 0.247309,
+      "ruin": 0.026394,
+      "mountain": 0.95,
+      "port": 0.126693
+    },
+    "class_average_nll": {
+      "empty": 0.584811,
+      "forest": 0.641189,
+      "settlement": 1.728248,
+      "ruin": 3.634956,
+      "mountain": 0.051293,
+      "port": 2.065991
+    }
+  },
+  "model_comparison_summary": {
+    "candidate_model_name": "hierarchical-empirical-v5-adaptive",
+    "baseline_model_name": "hierarchical-empirical-v3-mechanics",
+    "overall_nll_delta": -0.064449,
+    "changed_cell_nll_delta": -0.160702,
+    "candidate_better": true
+  },
+  "query_budget_used": 20,
+  "observed_coverage_fraction": 0.27825,
+  "calibrated_parameters": {
+    "direct_observation_weight": 0.779840370784895,
+    "prior_weight": 0.3993850239288992,
+    "exact_weight": 0.2330271139017002,
+    "relaxed_weight": 0.16698438436268723,
+    "round_transition_weight": 0.2431675285981869,
+    "transition_weight": 0.21833014383602795,
+    "nearest_weight": 0.06922887980038171,
+    "cross_seed_nearest_weight": 0.038071287068122364,
+    "transition_alpha": 2.3916186805092763,
+    "round_transition_alpha": 0.7391999327591459,
+    "latent_proxy_strength": 0.2045559795019717,
+    "smoothing_base": 0.03221537101187849,
+    "smoothing_dynamic_scale": 0.020468533825366626,
+    "use_local_influence_pass": false,
+    "aggressive_transition_policy": false,
+    "legacy_trade_proxy_mode": false
+  }
+}

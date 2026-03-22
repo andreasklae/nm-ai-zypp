@@ -1,0 +1,528 @@
+{
+  "scenario_id": "travel_expense_from_receipt",
+  "trace_token": "ecf6d3daae",
+  "run_id": "7a1962ec67db4b96afce2f4ee856b4c9",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "attachment_extractor_availability",
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_call",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "attachment_extraction_subagent_result",
+    "tool_result",
+    "attachment_extraction_subagent_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "find_api_search",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "find_api_search",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "find_api_subagent_result",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_call",
+    "find_api_search",
+    "agent_messages",
+    "attachment_extraction_status",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "find_api_subagent_result",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result"
+  ],
+  "tool_sequence": [
+    "create_customer",
+    "create_project",
+    "create_employee",
+    "extract_attachment_data",
+    "announce_step",
+    "get_today_date",
+    "extract_attachment_data",
+    "announce_step",
+    "get_today_date",
+    "announce_step",
+    "get_today_date",
+    "find_api",
+    "configure_project_billing",
+    "get_timesheet_activities",
+    "get_account_balances",
+    "get_account_balances",
+    "find_api",
+    "announce_step",
+    "create_travel_expense",
+    "upload_attachment",
+    "announce_step",
+    "announce_step",
+    "find_api",
+    "create_project",
+    "create_project",
+    "create_project"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "create_customer",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "address_line1": null,
+            "city": null,
+            "email": null,
+            "invoice_send_method": null,
+            "invoices_due_in": null,
+            "invoices_due_in_type": null,
+            "name": "Dalheim AS",
+            "organization_number": "950103175",
+            "postal_code": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": null,
+            "name": "Sikkerheitsrevisjon",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_employee",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date_of_birth": null,
+            "department_id": null,
+            "email": "randi.lunde@example.org",
+            "first_name": "Randi",
+            "last_name": "Lunde",
+            "user_type": "STANDARD"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "extract_attachment_data",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "extract_attachment_data",
+            "get_today_date",
+            "create_travel_expense",
+            "create_travel_expense_cost"
+          ],
+          "success_criteria": "A travel expense named 'Eval Travel ecf6d3daae' is created with the costs from the attachment.",
+          "task_understanding": "Extract information from the attached receipt to create a travel expense with title 'Eval Travel ecf6d3daae'"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "extract_attachment_data",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "extract_attachment_data",
+            "get_today_date",
+            "create_department",
+            "create_employee",
+            "create_employment",
+            "set_employment_details"
+          ],
+          "success_criteria": "Employee Camille Bernard is created with department Drift, employment details, salary 790000, percentage 100%, start date 2026-04-09, STYRK 4110.",
+          "task_understanding": "Create an employee in Tripletex from the provided employment contract (PDF), including details like personal number, date of birth, department, occupation code, salary, percentage, and start date."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:get_today_date",
+            "get_account_balances"
+          ],
+          "success_criteria": "Identified top 3 expense accounts with largest increase from Jan to Feb 2026, created internal projects and activities for them.",
+          "task_understanding": "Compare expense account balances between Jan and Feb 2026, find the top 3 with the largest increase, create an internal project and an activity for each."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "find_api",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "need": "How to set hourly rate to 850 NOK for timesheets on a project? And how to generate an invoice from project hours (project invoicing)?"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "configure_project_billing",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108326466,
+            "fixed_price": null,
+            "is_fixed_price": false,
+            "project_id": 402035231,
+            "project_manager_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_timesheet_activities",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date": "2026-03-21",
+            "employee_id": null,
+            "project_id": 402035231
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_account_balances",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "account_number_from": 4000,
+            "account_number_to": 8999,
+            "date_from": "2026-01-01",
+            "date_to": "2026-01-31"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_account_balances",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "account_number_from": 4000,
+            "account_number_to": 8999,
+            "date_from": "2026-02-01",
+            "date_to": "2026-02-28"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "find_api",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "need": "How to set nationalIdentityNumber (personnummer) and bankAccountNumber for an employee in Tripletex? What endpoint should I use, and what are the exact field names?"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_travel_expense",
+            "upload_attachment"
+          ],
+          "success_criteria": "A basic travel expense 'Eval Travel ecf6d3daae' is created with the required details and the file is attached.",
+          "task_understanding": "Create a travel expense with the required fields since the attachment is blank, and then upload the attachment."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_travel_expense",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "department_id": null,
+            "employee_id": null,
+            "project_id": null,
+            "title": "Eval Travel ecf6d3daae",
+            "travel_details": {
+              "departure_date": "2026-03-21",
+              "departure_from": null,
+              "departure_time": null,
+              "destination": "M\u00f8te",
+              "is_day_trip": true,
+              "is_foreign_travel": false,
+              "purpose": "N/A",
+              "return_date": "2026-03-21",
+              "return_time": null
+            }
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "upload_attachment",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "entity_id": 11149861,
+            "entity_type": "travel_expense",
+            "file_index": 0
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [],
+          "success_criteria": "The travel expense is fully created.",
+          "task_understanding": "Finished."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:create_project",
+            "default_api:create_project_activity"
+          ],
+          "success_criteria": "Created three internal projects for the identified accounts and created one activity per project.",
+          "task_understanding": "Create 3 internal projects named 'Bilgodtgj\u00f8relse oppgavepliktig', 'Motordrevet verkt\u00f8y', and 'L\u00f8nn til ansatte', then create a project activity for each project."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "find_api",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "need": "What is the schema for POST /employee and PUT /employee/{id}? Does it include nationalIdentityNumber and bankAccountNumber fields? I need the exact field names."
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": true,
+            "name": "Motordrevet verkt\u00f8y",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": true,
+            "name": "L\u00f8nn til ansatte",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": true,
+            "name": "Bilgodtgj\u00f8relse oppgavepliktig",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 21,
+  "tripletex_write_count": 7,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": false,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": false,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": false,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "travel_expense_created": {
+      "passed": true,
+      "details": "Expected travel expense title present in /travelExpense listing."
+    }
+  }
+}

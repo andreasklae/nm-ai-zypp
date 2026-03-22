@@ -15,7 +15,6 @@ from typing import Any
 import requests
 from dotenv import dotenv_values
 
-
 DEFAULT_ENV_PATH = Path("src/ai_accounting_agent/.env")
 ATTACHMENTS_DIR = Path(__file__).resolve().parent / "fixtures" / "attachments"
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -87,8 +86,7 @@ def load_live_api_settings() -> LiveApiSettings:
         api_key=settings.get("AI_ACCOUNTING_AGENT_API_KEY", ""),
         tripletex_api_url=settings.get("TRIPLETEX_API_URL", "").rstrip("/"),
         tripletex_session_token=settings.get("TRIPLETEX_SESSION_TOKEN", ""),
-        gcp_project_id=settings.get("GOOGLE_CLOUD_PROJECT")
-        or settings.get("GCP_PROJECT_ID", DEFAULT_GCP_PROJECT_ID),
+        gcp_project_id=settings.get("GOOGLE_CLOUD_PROJECT") or settings.get("GCP_PROJECT_ID", DEFAULT_GCP_PROJECT_ID),
         cloud_run_service_name=settings.get("CLOUD_RUN_SERVICE_NAME", DEFAULT_CLOUD_RUN_SERVICE),
         cloudsdk_config_path=settings.get("CLOUDSDK_CONFIG")
         or (str(DEFAULT_GCLOUD_CONFIG) if DEFAULT_GCLOUD_CONFIG.exists() else ""),
@@ -103,9 +101,10 @@ def evaluator_headers(settings: LiveApiSettings) -> dict[str, str]:
 
 def attachment_payload(filename: str) -> dict[str, str]:
     path = ATTACHMENTS_DIR / filename
+    mime_type = "application/pdf" if "pdf" in filename.lower() else "image/png"
     return {
         "filename": filename,
-        "mime_type": "text/markdown",
+        "mime_type": mime_type,
         "content_base64": base64.b64encode(path.read_bytes()).decode(),
     }
 
@@ -167,7 +166,9 @@ def gcloud_env(settings: LiveApiSettings) -> dict[str, str]:
     return env
 
 
-def _run_gcloud_logging_query(settings: LiveApiSettings, filter_expression: str) -> tuple[bool, list[dict[str, Any]], str]:
+def _run_gcloud_logging_query(
+    settings: LiveApiSettings, filter_expression: str
+) -> tuple[bool, list[dict[str, Any]], str]:
     command = [
         "gcloud",
         "logging",
@@ -249,8 +250,7 @@ def fetch_cloud_logs(settings: LiveApiSettings, trace_token: str) -> dict[str, A
         if entries:
             run_entries = entries
             if any(
-                entry.get("jsonPayload", {}).get("event") in {"task_complete", "task_error"}
-                for entry in run_entries
+                entry.get("jsonPayload", {}).get("event") in {"task_complete", "task_error"} for entry in run_entries
             ):
                 break
         time.sleep(2)
@@ -333,16 +333,10 @@ def summarize_observed_behavior(
         response_body = {"raw_text": response.text}
 
     entries = sorted(cloud_logs.get("entries", []), key=lambda entry: entry.get("timestamp", ""))
-    structured_payloads = [
-        entry["jsonPayload"]
-        for entry in entries
-        if isinstance(entry.get("jsonPayload"), dict)
-    ]
+    structured_payloads = [entry["jsonPayload"] for entry in entries if isinstance(entry.get("jsonPayload"), dict)]
     event_sequence = [
         payload.get("event") or entry.get("logName", "").split("/")[-1]
-        for entry, payload in (
-            (entry, entry.get("jsonPayload", {})) for entry in entries
-        )
+        for entry, payload in ((entry, entry.get("jsonPayload", {})) for entry in entries)
     ]
     tool_calls = [payload for payload in structured_payloads if payload.get("event") == "tool_call"]
     tool_sequence = [payload.get("tool", "") for payload in tool_calls]
@@ -353,8 +347,12 @@ def summarize_observed_behavior(
         }
         for payload in tool_calls
     ]
-    tripletex_requests = [payload for payload in structured_payloads if payload.get("event") == "tripletex_http_request"]
-    tripletex_responses = [payload for payload in structured_payloads if payload.get("event") == "tripletex_http_response"]
+    tripletex_requests = [
+        payload for payload in structured_payloads if payload.get("event") == "tripletex_http_request"
+    ]
+    tripletex_responses = [
+        payload for payload in structured_payloads if payload.get("event") == "tripletex_http_response"
+    ]
     tripletex_error_statuses = [
         payload.get("status_code")
         for payload in tripletex_responses
@@ -393,11 +391,7 @@ def summarize_observed_behavior(
         1 for payload in tripletex_requests if payload.get("method") in {"POST", "PUT", "DELETE"}
     )
     run_id = next(
-        (
-            payload.get("run_id")
-            for payload in structured_payloads
-            if payload.get("run_id")
-        ),
+        (payload.get("run_id") for payload in structured_payloads if payload.get("run_id")),
         cloud_logs.get("run_id"),
     )
 
@@ -459,7 +453,7 @@ def write_scenario_artifacts(
         **sanitize_for_artifact(asdict(scenario)),
         "trace_token": trace_token,
         "attachment_manifest": [
-            {"filename": filename, "mime_type": "text/markdown"}
+            {"filename": filename, "mime_type": "application/pdf" if "pdf" in filename.lower() else "image/png"}
             for filename in scenario.attachment_filenames
         ],
     }

@@ -1,0 +1,13 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.mcp'
+      - '-t'
+      - 'europe-west4-docker.pkg.dev/ai-nm26osl-1850/ai-accounting-agent/tripletex-mcp:latest'
+      - '.'
+images:
+  - 'europe-west4-docker.pkg.dev/ai-nm26osl-1850/ai-accounting-agent/tripletex-mcp:latest'
+options:
+  logging: CLOUD_LOGGING_ONLY

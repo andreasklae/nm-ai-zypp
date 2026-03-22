@@ -1,0 +1,56 @@
+{
+  "round_id": "3eb0c25d-28fa-48ca-b8e1-fc249e3918e9",
+  "created_at": "2026-03-21T20:30:54.945431+00:00",
+  "receipts": [
+    {
+      "seed_index": 0,
+      "status_code": 200,
+      "response_body": {
+        "status": "accepted",
+        "round_id": "3eb0c25d-28fa-48ca-b8e1-fc249e3918e9",
+        "seed_index": 0
+      },
+      "skipped": false
+    },
+    {
+      "seed_index": 1,
+      "status_code": 200,
+      "response_body": {
+        "status": "accepted",
+        "round_id": "3eb0c25d-28fa-48ca-b8e1-fc249e3918e9",
+        "seed_index": 1
+      },
+      "skipped": false
+    },
+    {
+      "seed_index": 2,
+      "status_code": 200,
+      "response_body": {
+        "status": "accepted",
+        "round_id": "3eb0c25d-28fa-48ca-b8e1-fc249e3918e9",
+        "seed_index": 2
+      },
+      "skipped": false
+    },
+    {
+      "seed_index": 3,
+      "status_code": 200,
+      "response_body": {
+        "status": "accepted",
+        "round_id": "3eb0c25d-28fa-48ca-b8e1-fc249e3918e9",
+        "seed_index": 3
+      },
+      "skipped": false
+    },
+    {
+      "seed_index": 4,
+      "status_code": 200,
+      "response_body": {
+        "status": "accepted",
+        "round_id": "3eb0c25d-28fa-48ca-b8e1-fc249e3918e9",
+        "seed_index": 4
+      },
+      "skipped": false
+    }
+  ]
+}

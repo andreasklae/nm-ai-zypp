@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from ai_accounting_agent.agent import AgentExecutionResult, AgentTaskError
 from ai_accounting_agent.main import app
 
-
 client = TestClient(app)
 
 
@@ -55,6 +54,7 @@ def test_solve_returns_completed(monkeypatch) -> None:
 
 def test_solve_requires_api_key_when_configured(monkeypatch) -> None:
     monkeypatch.setenv("AI_ACCOUNTING_AGENT_API_KEY", "secret-token")
+
     async def _fake(**kwargs):
         return AgentExecutionResult(output="ok", model="gemini-3.1-pro-preview", messages=[], usage=None)
 

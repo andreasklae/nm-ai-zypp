@@ -1,0 +1,469 @@
+{
+  "scenario_id": "timesheet_entry_flow",
+  "trace_token": "f5b120984f",
+  "run_id": "c728d88c389a458eaafbb0af2dba39af",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "request_received",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "find_api_subagent_result",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "tool_result",
+    "agent_step",
+    "tool_call",
+    "tool_call",
+    "tool_result",
+    "tripletex_http_request",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tripletex_http_request",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_call",
+    "find_api_search",
+    "tool_call",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_retry_decision",
+    "tripletex_http_response",
+    "tool_error",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result"
+  ],
+  "tool_sequence": [
+    "create_project_activity",
+    "get_reference_data",
+    "announce_step",
+    "get_today_date",
+    "create_department",
+    "create_employee",
+    "create_project",
+    "announce_step",
+    "create_employment",
+    "get_today_date",
+    "announce_step",
+    "announce_step",
+    "get_timesheet_activities",
+    "create_employee",
+    "create_timesheet_entry",
+    "announce_step",
+    "find_api",
+    "create_product",
+    "tripletex_put",
+    "set_employment_details",
+    "tripletex_get"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "create_project_activity",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "activity_name": "Analyse",
+            "project_id": 402035257
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "departments"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:get_today_date",
+            "default_api:get_reference_data",
+            "default_api:create_customer",
+            "default_api:create_project",
+            "default_api:log_timesheet"
+          ],
+          "success_criteria": "Project created, activity found, and 2.5 hours logged for today with the specified comment.",
+          "task_understanding": "Create a project 'Eval Timesheet Project f5b120984f', find an activity, and log 2.5 hours for today with comment 'Eval timesheet f5b120984f'."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_department",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "department_number": null,
+            "name": "Drift"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_employee",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date_of_birth": "1992-09-04",
+            "department_id": 956700,
+            "email": "camille.bernard@example.org",
+            "first_name": "Camille",
+            "last_name": "Bernard",
+            "user_type": "STANDARD"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": null,
+            "name": "Eval Timesheet Project f5b120984f",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:create_project"
+          ],
+          "success_criteria": "Project created",
+          "task_understanding": "Create a project 'Eval Timesheet Project f5b120984f'."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_employment",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "division_id": null,
+            "employee_id": 18665410,
+            "is_main_employer": true,
+            "start_date": "2026-04-09"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_today_date",
+            "create_employee",
+            "create_employment"
+          ],
+          "success_criteria": "Employee Lena M\u00fcller is created with date of birth 1983-11-18, email lena.muller@example.org, and start date 2026-05-28.",
+          "task_understanding": "Create a new employee named Lena M\u00fcller with her birth date, email, and start date."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:get_timesheet_activities",
+            "default_api:create_timesheet_entry"
+          ],
+          "success_criteria": "Timesheet entry created",
+          "task_understanding": "Find a valid activity for the newly created project and log 2.5 hours on it."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_timesheet_activities",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date": "2026-03-21",
+            "employee_id": null,
+            "project_id": 402035294
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_employee",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date_of_birth": "1983-11-18",
+            "department_id": null,
+            "email": "lena.muller@example.org",
+            "first_name": "Lena",
+            "last_name": "M\u00fcller",
+            "user_type": "STANDARD"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_timesheet_entry",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "activity_id": 5588996,
+            "comment": "Eval timesheet f5b120984f",
+            "date": "2026-03-21",
+            "employee_id": null,
+            "hours": 2.5,
+            "project_id": 402035294
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "default_api:create_timesheet_entry"
+          ],
+          "success_criteria": "Timesheet entry successfully logged with hours 2.5 and comment Eval timesheet f5b120984f.",
+          "task_understanding": "Log the 2.5 hours on the project and activity for today."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "find_api",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "need": "Is there an endpoint to generate an invoice specifically from unbilled project hours (timesheets)? Like POST /projectInvoice, or PUT /project/{id}/:createInvoice? Or is creating a manual order the ONLY way to bill project hours in Tripletex?"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Analyse timer",
+            "number": null,
+            "price_excluding_vat_currency": 850,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "tripletex_put",
+      "arguments": {
+        "kwargs": {
+          "body": {
+            "bankAccountNumber": "18891171818",
+            "dateOfBirth": "1992-09-04",
+            "department": {
+              "id": 956700
+            },
+            "email": "camille.bernard@example.org",
+            "firstName": "Camille",
+            "id": 18665410,
+            "lastName": "Bernard",
+            "nationalIdentityNumber": "04099226434",
+            "version": 1
+          },
+          "params": null,
+          "path": "/employee/18665410"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "set_employment_details",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "annual_salary": 790000,
+            "date": "2026-04-09",
+            "employment_form": "PERMANENT",
+            "employment_id": 2835316,
+            "employment_type": "ORDINARY",
+            "hourly_wage": null,
+            "occupation_code": "4110",
+            "percentage_of_full_time_equivalent": 100,
+            "working_hours_scheme": "NOT_SHIFT"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "tripletex_get",
+      "arguments": {
+        "kwargs": {
+          "cache_key": null,
+          "params": null,
+          "path": "/employee/18665410"
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 26,
+  "tripletex_write_count": 11,
+  "tripletex_http_error_statuses": [
+    409
+  ],
+  "announce_step_before_tools": false,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": false,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": false,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": false,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": false,
+      "details": "Observed Tripletex error statuses: [409]"
+    },
+    "timesheet_project_created": {
+      "passed": true,
+      "details": "Expected timesheet project present in /project listing."
+    },
+    "timesheet_tool_present": {
+      "passed": true,
+      "details": "tool_sequence=['create_project_activity', 'get_reference_data', 'announce_step', 'get_today_date', 'create_department', 'create_employee', 'create_project', 'announce_step', 'create_employment', 'get_today_date', 'announce_step', 'announce_step', 'get_timesheet_activities', 'create_employee', 'create_timesheet_entry', 'announce_step', 'find_api', 'create_product', 'tripletex_put', 'set_employment_details', 'tripletex_get']"
+    }
+  }
+}

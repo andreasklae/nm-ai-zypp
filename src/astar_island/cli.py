@@ -7,12 +7,19 @@ from pathlib import Path
 from typing import Sequence
 
 from astar_island.backtest import run_backtests
+from astar_island.calibration import (
+    build_calibration_data,
+    build_similarity_calibration,
+    load_calibration,
+    save_calibration,
+)
 from astar_island.client import AstarIslandClient
 from astar_island.cloud import detect_gcloud_status
 from astar_island.config import load_settings
 from astar_island.delivery import collect_two_phase_observations, deliver_round, validate_prediction_bundle
 from astar_island.models import DeliveryRunManifest, SeedSubmissionReceipt, SubmissionBundle
 from astar_island.predictor import BaselinePredictor
+from astar_island.simulator import SimulatorPredictor
 from astar_island.storage import (
     load_observations,
     load_predictions,
@@ -123,11 +130,55 @@ def _command_collect_observations(args: argparse.Namespace) -> int:
 
 
 def _command_predict(args: argparse.Namespace) -> int:
+    settings = load_settings()
     artifact_dir = Path(args.artifact_dir)
     round_detail = load_round_detail(artifact_dir)
     observations = load_observations(artifact_dir)
-    predictor = BaselinePredictor()
-    predictions, diagnostics = predictor.predict_with_diagnostics(round_detail, observations)
+    calibration_path = artifact_dir / "calibration.json"
+    calibration = load_calibration(calibration_path)
+    client = AstarIslandClient(settings=settings) if settings.access_token else None
+    allowed_round_numbers = set(calibration.rounds_used) if calibration is not None else None
+    if calibration is None and client is not None:
+        try:
+            calibration = build_calibration_data(client)
+            save_calibration(calibration_path, calibration)
+            allowed_round_numbers = set(calibration.rounds_used)
+        except Exception:
+            calibration = None
+    if client is not None:
+        try:
+            allowed_round_numbers = {
+                round_item["round_number"]
+                for round_item in client.get_my_rounds()
+                if round_item.get("round_score") is not None and round_item.get("round_number") is not None
+            }
+        except Exception:
+            pass
+
+    adaptive_calibration = None
+    try:
+        from astar_island.backtest import _load_local_round_artifacts
+
+        adaptive_calibration = build_similarity_calibration(
+            round_detail,
+            observations,
+            _load_local_round_artifacts(settings.data_dir),
+            client=client,
+            analysis_cache_dir=settings.data_dir / "analysis_cache",
+            allowed_round_numbers=allowed_round_numbers,
+        )
+        if adaptive_calibration is not None:
+            calibration = adaptive_calibration
+            save_calibration(calibration_path, calibration)
+    except Exception:
+        adaptive_calibration = None
+
+    predictor = SimulatorPredictor(calibration_weight=0.2) if adaptive_calibration is not None else SimulatorPredictor()
+    predictions, diagnostics = predictor.predict_with_diagnostics(
+        round_detail,
+        observations,
+        calibration=calibration,
+    )
     validation = validate_prediction_bundle(
         predictions,
         expected_seed_count=round_detail.seeds_count,

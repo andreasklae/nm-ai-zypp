@@ -1,0 +1,33 @@
+{
+  "created_at": "2026-03-21T20:39:12.703910+00:00",
+  "scenario_id": "travel_expense_from_receipt",
+  "trace_token": "ecf6d3daae",
+  "request": {
+    "prompt": "Lag en reiseutgift med tittel Eval Travel ecf6d3daae basert p\u00e5 vedlegget. Bruk bare det som er n\u00f8dvendig for \u00e5 registrere reisen. trace_token=ecf6d3daae",
+    "files": [
+      {
+        "filename": "expense_receipt_image.png",
+        "mime_type": "image/png",
+        "content_base64": "[redacted]"
+      }
+    ],
+    "tripletex_credentials": {
+      "base_url": "https://kkpqfuj-amager.tripletex.dev/v2",
+      "session_token": "[redacted]"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-cloud-trace-context": "68a8c71a3ed9919e7cca20aa18d5485c;o=1",
+      "date": "Sat, 21 Mar 2026 20:38:57 GMT",
+      "server": "Google Frontend",
+      "Content-Length": "22",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    },
+    "body": {
+      "status": "completed"
+    }
+  }
+}

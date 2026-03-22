@@ -1,0 +1,92 @@
+{
+  "scenario_id": "product_creation_de",
+  "trace_token": "022eeff665",
+  "run_id": "f8063431a4e449aa84a43954812aa38c",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "get_today_date",
+    "create_product"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_today_date",
+            "create_product"
+          ],
+          "success_criteria": "Product 'Eval Produkt 022eeff665' exists in Tripletex with a price excluding VAT of 1250 NOK.",
+          "task_understanding": "Create a product named 'Eval Produkt 022eeff665' with a sales price of 1250 NOK (excluding VAT)."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Eval Produkt 022eeff665",
+            "number": null,
+            "price_excluding_vat_currency": 1250,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 1,
+  "tripletex_write_count": 1,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "product_created": {
+      "passed": true,
+      "details": "Expected product name present in /product listing."
+    }
+  }
+}

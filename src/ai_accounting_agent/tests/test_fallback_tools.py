@@ -14,10 +14,10 @@ from ai_accounting_agent.schemas import RawApiCallInput
 from ai_accounting_agent.tripletex_client import TripletexApiError
 from ai_accounting_agent.tripletex_tools import StepState, TripletexService
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_service(
     *,
@@ -31,11 +31,13 @@ def _make_service(
     client.cache = {}
 
     if get_responses:
+
         def fake_get(path, params=None, cache_key=None):
             for key, val in get_responses.items():
                 if path.startswith(key):
                     return val
             raise AssertionError(f"Unexpected GET: {path}")
+
         client.get = MagicMock(side_effect=fake_get)
 
     if request_side_effect:
@@ -62,6 +64,7 @@ def _make_service(
 # ---------------------------------------------------------------------------
 # ApiIndex unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestApiIndex:
     """Tests for the ApiIndex search and formatting."""
@@ -152,7 +155,7 @@ class TestTokenize:
         assert "big" in tokens
         assert "fan" in tokens
         assert "am" not in tokens  # too short
-        assert "a" not in tokens   # too short
+        assert "a" not in tokens  # too short
 
     def test_handles_special_chars(self) -> None:
         tokens = _tokenize("ledger/voucher reverse_payment 123")
@@ -173,9 +176,7 @@ class TestFormatTagGroups:
                     "method": "POST",
                     "path": "/customer",
                     "summary": "Create customer.",
-                    "parameters": [
-                        {"name": "fields", "type": "string", "description": "Fields to return"}
-                    ],
+                    "parameters": [{"name": "fields", "type": "string", "description": "Fields to return"}],
                     "request_body": {
                         "properties": {
                             "name": {"type": "string"},
@@ -210,31 +211,26 @@ class TestFormatTagGroups:
 # raw_api_call unit tests
 # ---------------------------------------------------------------------------
 
+
 class TestRawApiCall:
     """Tests for the raw_api_call tool."""
 
     def test_raw_get_call(self) -> None:
-        service, client = _make_service(
-            request_response={"value": {"id": 1, "name": "Test"}}
-        )
+        service, client = _make_service(request_response={"value": {"id": 1, "name": "Test"}})
         payload = RawApiCallInput(method="GET", path="/customer/1")
         result = service.raw_api_call(payload)
-        client.request.assert_called_once_with(
-            method="GET", path="/customer/1", params=None, json_body=None
-        )
+        client.request.assert_called_once_with(method="GET", path="/customer/1", params=None, json_body=None)
         assert result == {"value": {"id": 1, "name": "Test"}}
 
     def test_raw_post_call_with_body(self) -> None:
-        service, client = _make_service(
-            request_response={"value": {"id": 99, "name": "New"}}
-        )
+        service, client = _make_service(request_response={"value": {"id": 99, "name": "New"}})
         payload = RawApiCallInput(
             method="POST",
             path="/customer",
             body={"name": "New Customer"},
             query_params={"fields": "id,name"},
         )
-        result = service.raw_api_call(payload)
+        service.raw_api_call(payload)
         client.request.assert_called_once_with(
             method="POST",
             path="/customer",
@@ -243,32 +239,26 @@ class TestRawApiCall:
         )
 
     def test_raw_put_call(self) -> None:
-        service, client = _make_service(
-            request_response={"value": {"id": 1, "version": 2}}
-        )
+        service, client = _make_service(request_response={"value": {"id": 1, "version": 2}})
         payload = RawApiCallInput(
             method="PUT",
             path="/customer/1",
             body={"id": 1, "version": 1, "name": "Updated"},
         )
-        result = service.raw_api_call(payload)
+        service.raw_api_call(payload)
         client.request.assert_called_once()
 
     def test_raw_delete_call(self) -> None:
         service, client = _make_service(request_response=None)
         payload = RawApiCallInput(method="DELETE", path="/customer/1")
         service.raw_api_call(payload)
-        client.request.assert_called_once_with(
-            method="DELETE", path="/customer/1", params=None, json_body=None
-        )
+        client.request.assert_called_once_with(method="DELETE", path="/customer/1", params=None, json_body=None)
 
     def test_raw_call_normalizes_path_without_leading_slash(self) -> None:
         service, client = _make_service(request_response={"value": {}})
         payload = RawApiCallInput(method="GET", path="customer/1")
         service.raw_api_call(payload)
-        client.request.assert_called_once_with(
-            method="GET", path="/customer/1", params=None, json_body=None
-        )
+        client.request.assert_called_once_with(method="GET", path="/customer/1", params=None, json_body=None)
 
     def test_raw_call_requires_announce_step(self) -> None:
         service, _ = _make_service(step_announced=False, request_response={})
@@ -294,6 +284,7 @@ class TestRawApiCall:
 # find_api unit tests (mocking the sub-agent)
 # ---------------------------------------------------------------------------
 
+
 class TestFindApi:
     """Tests for the find_api tool with mocked sub-agent."""
 
@@ -304,9 +295,7 @@ class TestFindApi:
 
     def test_find_api_returns_no_match_for_gibberish(self) -> None:
         service, _ = _make_service()
-        result = asyncio.run(
-            service.find_api("xyzzy_nomatches_atall_qqq")
-        )
+        result = asyncio.run(service.find_api("xyzzy_nomatches_atall_qqq"))
         assert "No matching" in result["guidance"]
         assert result["searched_tags"] == []
         assert result["subagent_duration_ms"] == 0
@@ -325,9 +314,7 @@ class TestFindApi:
         with patch("ai_accounting_agent.tripletex_tools.Agent", return_value=mock_agent_instance) as mock_agent_cls:
             with patch("ai_accounting_agent.gemini.build_google_model") as mock_model:
                 mock_model.return_value = "fake-model"
-                result = asyncio.run(
-                    service.find_api("I need to reverse a posted voucher")
-                )
+                result = asyncio.run(service.find_api("I need to reverse a posted voucher"))
 
         # Verify sub-agent was created with the specialist prompt
         mock_agent_cls.assert_called_once()
@@ -363,7 +350,7 @@ class TestFindApi:
 
         with patch("ai_accounting_agent.tripletex_tools.Agent", return_value=mock_agent_instance):
             with patch("ai_accounting_agent.gemini.build_google_model"):
-                result = asyncio.run(
+                asyncio.run(
                     service.find_api(
                         "I tried POST /customer with {orgNumber: '123'} and got 422: "
                         "unknown field 'orgNumber'. What is the correct field name?"
@@ -403,6 +390,7 @@ class TestFindApi:
 # find_api live integration test (hits real Gemini API — skipped by default)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skipif(
     True,  # Change to False to run manually
     reason="Live sub-agent test — requires GEMINI_API_KEY and costs money",
@@ -412,9 +400,7 @@ class TestFindApiLive:
 
     def test_live_find_api_voucher_reversal(self) -> None:
         service, _ = _make_service()
-        result = asyncio.run(
-            service.find_api("I need to reverse a posted voucher in Tripletex")
-        )
+        result = asyncio.run(service.find_api("I need to reverse a posted voucher in Tripletex"))
         guidance = result["guidance"]
         assert "reverse" in guidance.lower()
         assert "/ledger/voucher" in guidance or "voucher" in guidance.lower()
@@ -422,9 +408,7 @@ class TestFindApiLive:
 
     def test_live_find_api_invoice_payment(self) -> None:
         service, _ = _make_service()
-        result = asyncio.run(
-            service.find_api("I need to register a payment on an invoice")
-        )
+        result = asyncio.run(service.find_api("I need to register a payment on an invoice"))
         guidance = result["guidance"]
         assert "payment" in guidance.lower()
         assert "invoice" in guidance.lower()

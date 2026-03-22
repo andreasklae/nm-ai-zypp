@@ -1,0 +1,152 @@
+{
+  "scenario_id": "read_only_proxy_verification",
+  "trace_token": "07fa31f846",
+  "run_id": "67164ba826964d54ab3f0d55f64cac58",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tripletex-agent",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result"
+  ],
+  "tool_sequence": [
+    "create_project",
+    "announce_step",
+    "get_today_date",
+    "get_reference_data",
+    "get_timesheet_activities",
+    "create_timesheet_entry"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "create_project",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "end_date": null,
+            "is_internal": null,
+            "name": "Eval Timesheet Project 35658ac1a9",
+            "number": null,
+            "project_manager_id": null,
+            "start_date": "2026-03-21"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "tripletex_get"
+          ],
+          "success_criteria": "Successfully perform a read-only GET request to verify Tripletex proxy connectivity.",
+          "task_understanding": "Confirm read-only access to the Tripletex proxy without modifying anything."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "whoami"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_timesheet_activities",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date": "2026-03-21",
+            "employee_id": null,
+            "project_id": 402034841
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_timesheet_entry",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "activity_id": 5588996,
+            "comment": "Eval timesheet 35658ac1a9",
+            "date": "2026-03-21",
+            "employee_id": null,
+            "hours": 2.5,
+            "project_id": 402034841
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 5,
+  "tripletex_write_count": 2,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": false,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": false,
+    "announce_step_before_tools": false,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": false
+  },
+  "all_checks_passed": false,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "no_tripletex_writes": {
+      "passed": false,
+      "details": "tripletex_write_count=2"
+    }
+  }
+}

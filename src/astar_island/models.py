@@ -294,6 +294,24 @@ class PredictionDiagnostics(StrictBaseModel):
     uncertainty_summaries: list[SeedUncertaintySummary]
 
 
+class SimulationParameters(StrictBaseModel):
+    """Estimated knobs for Monte Carlo terrain simulation (optional manifest payload)."""
+
+    settlement_survival_rate: float
+    settlement_death_class_distribution: list[float]
+    vacant_frontier_class_distribution: list[float]
+    vacant_interior_class_distribution: list[float]
+    forest_frontier_class_distribution: list[float]
+    forest_interior_class_distribution: list[float]
+    ruin_class_distribution: list[float]
+    expansion_pressure_anchor: float
+    port_prevalence_anchor: float
+    winter_severity_anchor: float
+    trade_strength_anchor: float
+    rebuild_strength_anchor: float
+    reclamation_rate_anchor: float
+
+
 class PredictorParameters(StrictBaseModel):
     direct_observation_weight: float = 0.86
     prior_weight: float = 0.34
@@ -386,3 +404,4 @@ class DeliveryRunManifest(StrictBaseModel):
     evaluation_mode: str | None = None
     model_comparison_summary: ModelComparisonSummary | None = None
     warnings: list[str] = Field(default_factory=list)
+    simulation_parameters: SimulationParameters | None = None

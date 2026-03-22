@@ -1,14 +1,16 @@
 """Analyze Cloud Run logs for recent evaluator submissions."""
+
 import json
+import os
 import subprocess
 import sys
-import os
 
 GCLOUD_CONFIG = "/Users/andreasklaeboe/repos/nm-ai-zypp/.gcloud"
 PROJECT = "ai-nm26osl-1850"
 SERVICE = "ai-accounting-agent"
 
 RUN_IDS = sys.argv[1:]
+
 
 def fetch_logs(run_id: str) -> list[dict]:
     filt = (
@@ -20,7 +22,9 @@ def fetch_logs(run_id: str) -> list[dict]:
     env["CLOUDSDK_CONFIG"] = GCLOUD_CONFIG
     result = subprocess.run(
         ["gcloud", "logging", "read", filt, f"--project={PROJECT}", "--limit=200", "--format=json"],
-        capture_output=True, text=True, env=env,
+        capture_output=True,
+        text=True,
+        env=env,
     )
     if result.returncode != 0:
         return []
@@ -70,9 +74,9 @@ def analyze(run_id: str) -> None:
             task_output = jp.get("output", "")[:200]
         elif event == "task_error":
             task_status = "ERROR"
-            task_output = f'{jp.get("error_type","")}: {jp.get("error_message","")[:200]}'
+            task_output = f"{jp.get('error_type', '')}: {jp.get('error_message', '')[:200]}"
 
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"RUN: {run_id}")
     print(f"Prompt: {prompt}")
     print(f"Status: {task_status}")

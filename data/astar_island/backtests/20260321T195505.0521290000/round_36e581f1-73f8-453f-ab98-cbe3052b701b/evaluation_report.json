@@ -1,0 +1,54 @@
+{
+  "round_id": "36e581f1-73f8-453f-ab98-cbe3052b701b",
+  "round_number": 7,
+  "artifact_dir": "data/astar_island/backtests/20260321T195505.0521290000/round_36e581f1-73f8-453f-ab98-cbe3052b701b",
+  "model_name": "hierarchical-empirical-v5-adaptive",
+  "evaluation_mode": "metadata_only",
+  "official_round_status": "completed",
+  "official_score_metadata": {
+    "leaderboard_entry_count": 361,
+    "probe_statuses": {
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/scores": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/score": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/results": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/result": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/submissions": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/leaderboard": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/ground-truth": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/ground_truth": 404,
+      "/rounds/36e581f1-73f8-453f-ab98-cbe3052b701b/truth": 404
+    }
+  },
+  "prediction_validation": {
+    "valid": true,
+    "seed_count": 5,
+    "map_height": 40,
+    "map_width": 40,
+    "class_count": 6,
+    "min_probability": 0.01,
+    "max_sum_error": 0.0
+  },
+  "holdout_metrics": null,
+  "legacy_holdout_metrics": null,
+  "model_comparison_summary": null,
+  "query_budget_used": 0,
+  "observed_coverage_fraction": 0.0,
+  "calibrated_parameters": {
+    "direct_observation_weight": 0.779840370784895,
+    "prior_weight": 0.3993850239288992,
+    "exact_weight": 0.2330271139017002,
+    "relaxed_weight": 0.16698438436268723,
+    "round_transition_weight": 0.2431675285981869,
+    "transition_weight": 0.21833014383602795,
+    "nearest_weight": 0.06922887980038171,
+    "cross_seed_nearest_weight": 0.038071287068122364,
+    "transition_alpha": 2.3916186805092763,
+    "round_transition_alpha": 0.7391999327591459,
+    "latent_proxy_strength": 0.2045559795019717,
+    "smoothing_base": 0.03221537101187849,
+    "smoothing_dynamic_scale": 0.020468533825366626,
+    "use_local_influence_pass": false,
+    "aggressive_transition_policy": false,
+    "legacy_trade_proxy_mode": false
+  }
+}

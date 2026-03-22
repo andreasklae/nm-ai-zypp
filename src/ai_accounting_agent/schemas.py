@@ -94,6 +94,10 @@ class CreateEmployeeInput(StrictBaseModel):
     first_name: str = Field(min_length=1, description="Employee first name.")
     last_name: str = Field(min_length=1, description="Employee last name.")
     email: str | None = Field(default=None, description="Employee email address when the task explicitly provides one.")
+    date_of_birth: str | None = Field(
+        default=None,
+        description="Date of birth in ISO format YYYY-MM-DD. Set this whenever the prompt provides it — avoids a separate update call.",
+    )
     user_type: Literal["STANDARD", "EXTENDED", "NO_ACCESS"] = "STANDARD"
     department_id: int | None = Field(
         default=None, description="Department ID. Omit to let the service choose the default department."
@@ -202,7 +206,9 @@ class VoucherPostingInput(StrictBaseModel):
         description="Signed amount in company currency. Omit to reuse amount_gross.",
     )
     description: str | None = Field(default=None, description="Optional posting description.")
-    row: int | None = Field(default=None, description="Optional posting row number. Omit to auto-number from 1.")
+    row: int | None = Field(
+        default=None, description="Optional posting row number. Omit to auto-number from 1. NEVER use row 0."
+    )
     vat_type_id: int | None = Field(default=None, description="Optional VAT type ID for VAT-locked accounts.")
     supplier_id: int | None = Field(
         default=None, description="Supplier ID required when the account ledger type is VENDOR."
@@ -212,6 +218,10 @@ class VoucherPostingInput(StrictBaseModel):
     )
     employee_id: int | None = Field(
         default=None, description="Employee ID required when the account ledger type is EMPLOYEE."
+    )
+    project_id: int | None = Field(
+        default=None,
+        description="Optional project ID to link this posting to a project in Tripletex.",
     )
     free_accounting_dimension_1_id: int | None = Field(
         default=None,
@@ -224,6 +234,14 @@ class VoucherPostingInput(StrictBaseModel):
     free_accounting_dimension_3_id: int | None = Field(
         default=None,
         description="ID of an accounting dimension value to link to this posting as freeAccountingDimension3.",
+    )
+    term_of_payment: int | None = Field(
+        default=None,
+        description=(
+            "Payment term in days for this posting (maps to Tripletex termOfPayment). "
+            "Set on the accounts-payable (2400) credit posting when the supplier invoice has a "
+            "specific due date. Calculate as: due_date_days_from_invoice_date (e.g. 30 for net-30)."
+        ),
     )
 
 
@@ -269,12 +287,46 @@ class CreateInvoiceInput(StrictBaseModel):
     )
 
 
+class SendInvoiceInput(StrictBaseModel):
+    invoice_id: int = Field(description="Existing invoice ID to send.")
+    send_type: Literal["EMAIL", "EHF", "AVTALEGIRO", "EFAKTURA", "VIPPS", "PAPER", "MANUAL"] = Field(
+        default="EMAIL",
+        description="Tripletex send type used for the invoice send action.",
+    )
+    override_email_address: str | None = Field(
+        default=None,
+        description="Optional email override used when send_type is EMAIL.",
+    )
+
+
 class RegisterInvoicePaymentInput(StrictBaseModel):
     invoice_id: int = Field(description="Existing invoice ID to register payment on.")
     payment_date: str = Field(min_length=1, description="Payment date in ISO format YYYY-MM-DD.")
     payment_type_id: int = Field(description="Tripletex invoice payment type ID.")
     paid_amount: float = Field(description="Paid amount in company currency.")
     paid_amount_currency: float | None = Field(default=None, description="Optional paid amount in invoice currency.")
+
+
+class RegisterSupplierInvoicePaymentInput(StrictBaseModel):
+    supplier_invoice_id: int = Field(description="Existing supplier invoice ID to register payment on.")
+    payment_type_id: int = Field(description="Tripletex outgoing payment type ID.")
+    payment_date: str = Field(min_length=1, description="Payment date in ISO format YYYY-MM-DD.")
+    amount: float | None = Field(
+        default=None,
+        description="Optional payment amount. Omit to let Tripletex settle the remaining amount when supported.",
+    )
+    partial_payment: bool = Field(
+        default=False,
+        description="Allow multiple payments to be registered on the same supplier invoice.",
+    )
+    kid_or_receiver_reference: str | None = Field(
+        default=None,
+        description="Optional KID or receiver reference when the payment flow requires it.",
+    )
+    bban: str | None = Field(
+        default=None,
+        description="Optional bank account number / BBAN for the payment.",
+    )
 
 
 class CreateCreditNoteInput(StrictBaseModel):
@@ -291,7 +343,9 @@ class ReverseVoucherInput(StrictBaseModel):
 class TravelDetailsInput(StrictBaseModel):
     departure_date: str = Field(min_length=1, description="Travel departure date in ISO format YYYY-MM-DD.")
     return_date: str = Field(min_length=1, description="Travel return date in ISO format YYYY-MM-DD.")
-    departure_from: str = Field(min_length=1, description="Departure location.")
+    departure_from: str = Field(
+        min_length=1, description="Departure location when known from the prompt or attachment."
+    )
     destination: str = Field(min_length=1, description="Destination location.")
     purpose: str = Field(min_length=1, description="Trip purpose.")
     is_day_trip: bool = Field(default=True, description="Whether the trip starts and ends on the same day.")
@@ -323,6 +377,9 @@ class AddTravelExpenseCostInput(StrictBaseModel):
 class TransitionTravelExpenseInput(StrictBaseModel):
     travel_expense_id: int = Field(description="Existing travel expense ID.")
     action: Literal["deliver", "approve", "unapprove", "undeliver", "createVouchers"]
+    date: str | None = Field(
+        default=None, description="ISO format YYYY-MM-DD. Required when action is 'createVouchers'."
+    )
 
 
 class CreateTimesheetEntryInput(StrictBaseModel):
@@ -386,7 +443,16 @@ class AddTravelMileageAllowanceInput(StrictBaseModel):
 
 class AddTravelPerDiemInput(StrictBaseModel):
     travel_expense_id: int = Field(description="Existing travel expense ID.")
-    rate_type_id: int = Field(description="The rate row's 'id' field from get_reference_data(travel_per_diem_rates).")
+    rate_type_id: int = Field(
+        description=(
+            "The rate row's 'id' field from get_reference_data(travel_per_diem_rates). "
+            "When the prompt specifies a daily rate (e.g. '800 NOK/day'), find the rate_id where "
+            "the rate row's 'rate' field equals that amount exactly. If no exact match, pick the "
+            "row whose 'rateCategory.name' best describes the trip (domestic overnight = "
+            "'innland...etter overnatting', day trip = 'dagsreise'). NEVER pick purely by "
+            "numeric proximity — category semantics come first."
+        )
+    )
     rate_category_id: int = Field(description="The rate row's 'rateCategory.id' field from the same lookup.")
     location: str = Field(min_length=1, description="Location for per-diem compensation.")
     count: int = Field(gt=0, description="Number of per-diem units (days).")
@@ -397,6 +463,18 @@ class AddTravelPerDiemInput(StrictBaseModel):
     is_deduction_for_breakfast: bool = Field(default=False, description="Deduct breakfast from per-diem.")
     is_deduction_for_lunch: bool = Field(default=False, description="Deduct lunch from per-diem.")
     is_deduction_for_dinner: bool = Field(default=False, description="Deduct dinner from per-diem.")
+    rate: float | None = Field(
+        default=None,
+        description=(
+            "Custom per-diem rate in NOK per day. Set this when the prompt specifies an exact "
+            "daily rate that does not match any system rate (e.g. prompt says '800 NOK/day' but "
+            "the closest system rate is 736 NOK). Overrides the system rate for this entry."
+        ),
+    )
+    amount: float | None = Field(
+        default=None,
+        description="Total per-diem amount in NOK. Set when the prompt gives a total allowance rather than a daily rate.",
+    )
 
 
 class SalarySpecificationInput(StrictBaseModel):
@@ -431,7 +509,9 @@ class UploadAttachmentInput(StrictBaseModel):
 
 
 class CreateBankReconciliationInput(StrictBaseModel):
-    account_id: int = Field(description="Bank ledger account ID (e.g. account 1920).")
+    account_id: int = Field(
+        description="Internal ID of the bank ledger account (NOT the account number). Find via get_reference_data(bank_accounts)."
+    )
     accounting_period_id: int = Field(description="Accounting period ID from GET /ledger/accountingPeriod.")
     type: str = Field(default="MANUAL", description="Reconciliation type. MANUAL is the default.")
     bank_account_closing_balance_currency: float = Field(default=0, description="Closing balance in account currency.")
@@ -476,6 +556,7 @@ class ReferenceLookupInput(StrictBaseModel):
         "products",
         "projects",
         "invoice_payment_types",
+        "outgoing_payment_types",
         "travel_cost_categories",
         "travel_payment_types",
         "travel_expenses",
@@ -514,6 +595,94 @@ class CreateEmploymentInput(StrictBaseModel):
         description="Division ID. Omit to auto-use the first existing division or create one.",
     )
     is_main_employer: bool = Field(default=True, description="Whether this is the main employer.")
+
+
+class SetEmploymentDetailsInput(StrictBaseModel):
+    employment_id: int = Field(description="Employment ID returned by create_employment.")
+    date: str = Field(min_length=1, description="Effective date for the employment details in ISO format YYYY-MM-DD.")
+    employment_type: str = Field(
+        default="ORDINARY",
+        description="Employment type: ORDINARY, MARITIME, or FREELANCE.",
+    )
+    employment_form: str = Field(
+        default="PERMANENT",
+        description="Employment form: PERMANENT (fast stilling), TEMPORARY, or others.",
+    )
+    percentage_of_full_time_equivalent: float = Field(
+        default=100.0,
+        ge=0,
+        le=100,
+        description="Employment percentage (stillingsprosent). 100 = full time, 80 = 80% etc.",
+    )
+    annual_salary: float | None = Field(
+        default=None,
+        ge=0,
+        description="Annual gross salary in NOK (årslønn).",
+    )
+    hourly_wage: float | None = Field(
+        default=None,
+        ge=0,
+        description="Hourly wage in NOK (timelønn). Use this for hourly-paid employees instead of annual_salary.",
+    )
+    working_hours_scheme: str = Field(
+        default="NOT_SHIFT",
+        description="Working hours scheme: NOT_SHIFT, ROUND_THE_CLOCK, SHIFT_365, OFFSHORE_336, or others.",
+    )
+    occupation_code: str | None = Field(
+        default=None,
+        description=(
+            "STYRK 4-digit occupation code. REQUIRED for employee onboarding — always set this. "
+            "Read the FULL TEXT of the PDF to find it (look for 'Yrkeskode', 'STYRK', 'stillingskode'). "
+            "If not printed as a number, derive from the job title: "
+            "Regnskapssjef/Chief Accountant→1211, Regnskapsfører/Bookkeeper→3313, "
+            "Revisor/Auditor→2411, IT-konsulent→2512, Ingeniør→2141, Sykepleier→2221, "
+            "Selger/Sales→3322, Daglig leder/CEO→1120, Økonomisjef/CFO→1211, "
+            "Kontorassistent/Office clerk→4110. NEVER leave null if a job title is given."
+        ),
+    )
+
+
+class SetStandardTimeInput(StrictBaseModel):
+    employee_id: int = Field(description="Existing employee ID.")
+    from_date: str = Field(min_length=1, description="Start date for working hours in ISO format YYYY-MM-DD.")
+    hours_per_day: float = Field(gt=0, le=24, description="Standard working hours per day (e.g. 7.5 or 6.0).")
+
+
+class CreateProjectActivityInput(StrictBaseModel):
+    project_id: int = Field(description="Existing project ID.")
+    activity_name: str = Field(min_length=1, description="Name for the new project-specific activity.")
+
+
+class GetAccountBalancesInput(StrictBaseModel):
+    date_from: str = Field(min_length=1, description="Period start date in ISO format YYYY-MM-DD.")
+    date_to: str = Field(min_length=1, description="Period end date in ISO format YYYY-MM-DD.")
+    account_number_from: int | None = Field(
+        default=None,
+        description="Filter accounts starting from this number (e.g. 4000 for expenses).",
+    )
+    account_number_to: int | None = Field(
+        default=None,
+        description="Filter accounts up to this number (e.g. 8999 for all expense/finance accounts).",
+    )
+
+
+class GetOpenPostsInput(StrictBaseModel):
+    date: str = Field(min_length=1, description="Open-post snapshot date in ISO format YYYY-MM-DD.")
+    account_id: int | None = Field(default=None, description="Optional ledger account ID filter.")
+    supplier_id: int | None = Field(default=None, description="Optional supplier ID filter.")
+    customer_id: int | None = Field(default=None, description="Optional customer ID filter.")
+    employee_id: int | None = Field(default=None, description="Optional employee ID filter.")
+    department_id: int | None = Field(default=None, description="Optional department ID filter.")
+    project_id: int | None = Field(default=None, description="Optional project ID filter.")
+    product_id: int | None = Field(default=None, description="Optional product ID filter.")
+    account_number_from: int | None = Field(
+        default=None,
+        description="Optional account number lower bound for posting-open-post lookups.",
+    )
+    account_number_to: int | None = Field(
+        default=None,
+        description="Optional account number upper bound for posting-open-post lookups.",
+    )
 
 
 class FindApiInput(StrictBaseModel):

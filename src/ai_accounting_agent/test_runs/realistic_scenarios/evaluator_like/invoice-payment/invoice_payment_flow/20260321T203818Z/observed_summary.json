@@ -1,0 +1,214 @@
+{
+  "scenario_id": "invoice_payment_flow",
+  "trace_token": "e9c54a5fa7",
+  "run_id": "cb11c180d9dc4595adbb27b7f41a1483",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "request_received",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout"
+  ],
+  "tool_sequence": [
+    "get_today_date",
+    "announce_step",
+    "get_reference_data",
+    "create_product",
+    "create_customer",
+    "create_order",
+    "create_invoice",
+    "register_invoice_payment"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_customer",
+            "create_product",
+            "create_order",
+            "create_invoice",
+            "register_invoice_payment"
+          ],
+          "success_criteria": "A customer, product, order, invoice are created, and the invoice is marked as paid.",
+          "task_understanding": "Create a specific customer and product, generate an order and invoice for them, and then register a payment for that invoice."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {},
+            "reference": "invoice_payment_types"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Eval Payment Product e9c54a5fa7",
+            "number": null,
+            "price_excluding_vat_currency": 100,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_customer",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "address_line1": null,
+            "city": null,
+            "email": null,
+            "invoice_send_method": null,
+            "invoices_due_in": null,
+            "invoices_due_in_type": null,
+            "name": "Eval Payment Customer e9c54a5fa7",
+            "organization_number": null,
+            "postal_code": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_order",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108419398,
+            "delivery_date": "2026-03-21",
+            "order_date": "2026-03-21",
+            "order_lines": [
+              {
+                "count": 1,
+                "description": null,
+                "product_id": 84420037,
+                "unit_price_excluding_vat_currency": null
+              }
+            ],
+            "project_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_invoice",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108419398,
+            "invoice_date": "2026-03-21",
+            "invoice_due_date": "2026-04-04",
+            "order_ids": [
+              402035197
+            ],
+            "send_to_customer": false
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "register_invoice_payment",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "invoice_id": 2147635777,
+            "paid_amount": 100,
+            "paid_amount_currency": null,
+            "payment_date": "2026-03-21",
+            "payment_type_id": 32817129
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 10,
+  "tripletex_write_count": 5,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": false,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": false,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": false,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "payment_tool_present": {
+      "passed": true,
+      "details": "tool_sequence=['get_today_date', 'announce_step', 'get_reference_data', 'create_product', 'create_customer', 'create_order', 'create_invoice', 'register_invoice_payment']"
+    }
+  }
+}
