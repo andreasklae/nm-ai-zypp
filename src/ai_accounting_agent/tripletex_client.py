@@ -35,6 +35,7 @@ class TripletexClient:
     timeout_seconds: float = 30.0
     session: requests.Session = field(default_factory=requests.Session)
     cache: dict[str, Any] = field(default_factory=dict)
+    _last_status_code: int = field(default=200, repr=False)
 
     def _auth(self) -> tuple[str, str]:
         return ("0", self.session_token)
@@ -85,14 +86,23 @@ class TripletexClient:
             headers={"Accept": "application/json"},
             timeout=timeout_seconds or self.timeout_seconds,
         )
+        self._last_status_code = response.status_code
 
         duration_ms = round((time.perf_counter() - started) * 1000)
         request_id = response.headers.get("x-tlx-request-id")
 
-        try:
-            body: Any = response.json()
-        except ValueError:
-            body = response.text
+        if response.headers.get("Content-Type", "").startswith("application/json"):
+            try:
+                body: Any = response.json()
+            except ValueError:
+                body = response.text
+        elif response.headers.get("Content-Type", "").startswith("application/pdf"):
+            body = f"[Binary PDF data returned, {len(response.content)} bytes]"
+        else:
+            try:
+                body = response.json()
+            except ValueError:
+                body = response.text
 
         log_event(
             "tripletex_http_response",
@@ -169,10 +179,18 @@ class TripletexClient:
         duration_ms = round((time.perf_counter() - started) * 1000)
         request_id = response.headers.get("x-tlx-request-id")
 
-        try:
-            body: Any = response.json()
-        except ValueError:
-            body = response.text
+        if response.headers.get("Content-Type", "").startswith("application/json"):
+            try:
+                body: Any = response.json()
+            except ValueError:
+                body = response.text
+        elif response.headers.get("Content-Type", "").startswith("application/pdf"):
+            body = f"[Binary PDF data returned, {len(response.content)} bytes]"
+        else:
+            try:
+                body = response.json()
+            except ValueError:
+                body = response.text
 
         log_event(
             "tripletex_http_response",

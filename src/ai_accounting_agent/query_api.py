@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Optional
 from urllib import error, request
 
-
 ENV_PATH = Path(__file__).with_name(".env")
 
 

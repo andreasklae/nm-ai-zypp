@@ -1,0 +1,50 @@
+{
+  "round_id": "cc5442dd-bc5d-418b-911b-7eb960cb0390",
+  "artifact_dir": "data/astar_island/backtests/20260321T195505.0521290000/round_cc5442dd-bc5d-418b-911b-7eb960cb0390",
+  "active_round_status": "completed",
+  "round_number": 15,
+  "created_at": "2026-03-21T20:18:49.195468+00:00",
+  "updated_at": "2026-03-21T20:18:49.195479+00:00",
+  "status": "backtested",
+  "phase1_plan": null,
+  "phase2_plan": null,
+  "observations": null,
+  "latent_proxies": null,
+  "uncertainty_summaries": [],
+  "prediction_model_name": "hierarchical-empirical-v5-adaptive",
+  "prediction_created_at": "2026-03-21T20:18:47.215186+00:00",
+  "prediction_validation": {
+    "valid": true,
+    "seed_count": 5,
+    "map_height": 40,
+    "map_width": 40,
+    "class_count": 6,
+    "min_probability": 0.01,
+    "max_sum_error": 0.0
+  },
+  "submission": null,
+  "official_score_metadata": {
+    "leaderboard_entry_count": 361,
+    "probe_statuses": {
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/scores": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/score": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/results": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/result": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/submissions": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/leaderboard": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/ground-truth": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/ground_truth": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/truth": 404
+    }
+  },
+  "evaluation_mode": "holdout_only",
+  "model_comparison_summary": {
+    "candidate_model_name": "hierarchical-empirical-v5-adaptive",
+    "baseline_model_name": "hierarchical-empirical-v3-mechanics",
+    "overall_nll_delta": -0.159433,
+    "changed_cell_nll_delta": -0.023494,
+    "candidate_better": true
+  },
+  "warnings": [],
+  "simulation_parameters": null
+}

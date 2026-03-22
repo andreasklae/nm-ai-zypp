@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import secrets
 import time
 from typing import Annotated, Any
@@ -11,7 +12,7 @@ from ai_accounting_agent import gemini
 from ai_accounting_agent.agent import AgentTaskError, execute_agent
 from ai_accounting_agent.schemas import PreparedAttachment, SolveRequest, SolveResponse
 from ai_accounting_agent.telemetry import build_attachment_log, log_event
-
+from ai_accounting_agent.v2.agent import execute_agent_v2, AgentTaskErrorV2
 
 app = FastAPI(
     title="Tripletex Competition Agent",
@@ -80,13 +81,19 @@ async def solve(
     )
 
     try:
-        result = await execute_agent(
+        # Default to V2 Agent directly
+        result = await execute_agent_v2(
             request=request,
             attachments=attachments,
             model=gemini.DEFAULT_GEMINI_MODEL,
             run_id=run_id,
         )
-    except AgentTaskError as exc:
+        # Normalize result shape to match V1 reporting variables below
+        exc_model = result.model
+        exc_messages = result.messages
+        exc_usage = result.usage
+        exc_output = result.output
+    except (AgentTaskError, AgentTaskErrorV2) as exc:
         duration_ms = round((time.perf_counter() - start) * 1000)
         response.status_code = status.HTTP_200_OK
         log_event(
@@ -112,7 +119,7 @@ async def solve(
             status=200,
             duration_ms=duration_ms,
             prompt=request.prompt,
-            agent_output=exc.output,
+            agent_output=None,
             file_count=len(attachment_logs),
             files=attachment_logs,
             agent_message_count=len(exc.messages),
@@ -145,15 +152,15 @@ async def solve(
         "task_complete",
         run_id=run_id,
         path="/solve",
-        model=result.model,
+        model=exc_model,
         status=200,
         duration_ms=duration_ms,
         prompt=request.prompt,
-        agent_output=result.output,
+        agent_output=exc_output,
         file_count=len(attachment_logs),
         files=attachment_logs,
-        agent_message_count=len(result.messages),
-        usage=result.usage,
+        agent_message_count=len(exc_messages),
+        usage=exc_usage,
     )
 
     return SolveResponse()

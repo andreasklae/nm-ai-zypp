@@ -1,0 +1,102 @@
+{
+  "round_id": "cc5442dd-bc5d-418b-911b-7eb960cb0390",
+  "round_number": 15,
+  "artifact_dir": "data/astar_island/backtests/20260321T195505.0521290000/round_cc5442dd-bc5d-418b-911b-7eb960cb0390",
+  "model_name": "hierarchical-empirical-v5-adaptive",
+  "evaluation_mode": "holdout_only",
+  "official_round_status": "completed",
+  "official_score_metadata": {
+    "leaderboard_entry_count": 361,
+    "probe_statuses": {
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/scores": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/score": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/results": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/result": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/submissions": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/leaderboard": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/ground-truth": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/ground_truth": 404,
+      "/rounds/cc5442dd-bc5d-418b-911b-7eb960cb0390/truth": 404
+    }
+  },
+  "prediction_validation": {
+    "valid": true,
+    "seed_count": 5,
+    "map_height": 40,
+    "map_width": 40,
+    "class_count": 6,
+    "min_probability": 0.01,
+    "max_sum_error": 0.0
+  },
+  "holdout_metrics": {
+    "overall_nll": 0.976198,
+    "changed_cell_nll": 1.437019,
+    "observed_cell_count": 3375,
+    "changed_cell_count": 1393,
+    "class_average_probability": {
+      "empty": 0.488432,
+      "settlement": 0.305131,
+      "forest": 0.463224,
+      "ruin": 0.027943,
+      "mountain": 0.95,
+      "port": 0.072125
+    },
+    "class_average_nll": {
+      "empty": 0.782091,
+      "settlement": 1.239446,
+      "forest": 0.923289,
+      "ruin": 3.603948,
+      "mountain": 0.051293,
+      "port": 2.791268
+    }
+  },
+  "legacy_holdout_metrics": {
+    "overall_nll": 1.135631,
+    "changed_cell_nll": 1.460513,
+    "observed_cell_count": 3375,
+    "changed_cell_count": 1393,
+    "class_average_probability": {
+      "empty": 0.334697,
+      "settlement": 0.463091,
+      "forest": 0.528142,
+      "ruin": 0.025724,
+      "mountain": 0.95,
+      "port": 0.141157
+    },
+    "class_average_nll": {
+      "empty": 1.232543,
+      "settlement": 0.918194,
+      "forest": 0.900139,
+      "ruin": 3.674111,
+      "mountain": 0.051293,
+      "port": 2.329807
+    }
+  },
+  "model_comparison_summary": {
+    "candidate_model_name": "hierarchical-empirical-v5-adaptive",
+    "baseline_model_name": "hierarchical-empirical-v3-mechanics",
+    "overall_nll_delta": -0.159433,
+    "changed_cell_nll_delta": -0.023494,
+    "candidate_better": true
+  },
+  "query_budget_used": 50,
+  "observed_coverage_fraction": 0.311375,
+  "calibrated_parameters": {
+    "direct_observation_weight": 0.779840370784895,
+    "prior_weight": 0.3993850239288992,
+    "exact_weight": 0.2330271139017002,
+    "relaxed_weight": 0.16698438436268723,
+    "round_transition_weight": 0.2431675285981869,
+    "transition_weight": 0.21833014383602795,
+    "nearest_weight": 0.06922887980038171,
+    "cross_seed_nearest_weight": 0.038071287068122364,
+    "transition_alpha": 2.3916186805092763,
+    "round_transition_alpha": 0.7391999327591459,
+    "latent_proxy_strength": 0.2045559795019717,
+    "smoothing_base": 0.03221537101187849,
+    "smoothing_dynamic_scale": 0.020468533825366626,
+    "use_local_influence_pass": false,
+    "aggressive_transition_policy": false,
+    "legacy_trade_proxy_mode": false
+  }
+}

@@ -85,11 +85,11 @@ def _extract_tool_sequence(messages: list[Any]) -> list[str]:
 
 def _print_result(label: str, result: AgentExecutionResult, tool_seq: list[str]) -> None:
     """Print a summary for manual inspection."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"SCENARIO: {label}")
     print(f"Tool sequence: {tool_seq}")
     print(f"Output: {result.output[:200]}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 class TestEmployeeCreation:

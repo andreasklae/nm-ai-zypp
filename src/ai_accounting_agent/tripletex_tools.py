@@ -13,6 +13,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.exceptions import ModelRetry
 from pydantic_ai.tools import ToolDefinition
 
+from ai_accounting_agent.attachment_extractor import extract_attachments
 from ai_accounting_agent.schemas import (
     AddTravelExpenseCostInput,
     AddTravelMileageAllowanceInput,
@@ -30,6 +31,7 @@ from ai_accounting_agent.schemas import (
     CreateInvoiceInput,
     CreateOrderInput,
     CreateProductInput,
+    CreateProjectActivityInput,
     CreateProjectInput,
     CreateSupplierInput,
     CreateTimesheetEntryInput,
@@ -37,13 +39,20 @@ from ai_accounting_agent.schemas import (
     CreateVoucherInput,
     CreateWebhookSubscriptionInput,
     FindApiInput,
+    GetAccountBalancesInput,
+    GetOpenPostsInput,
     GetTimesheetActivitiesInput,
     GrantEmployeePrivilegesInput,
+    PreparedAttachment,
     RawApiCallInput,
     ReferenceLookupInput,
     RegisterInvoicePaymentInput,
+    RegisterSupplierInvoicePaymentInput,
     ReverseVoucherInput,
     RunSalaryTransactionInput,
+    SendInvoiceInput,
+    SetEmploymentDetailsInput,
+    SetStandardTimeInput,
     TransitionTravelExpenseInput,
     UpdateEmployeeInput,
     UploadAttachmentInput,
@@ -52,7 +61,13 @@ from ai_accounting_agent.telemetry import log_event, log_tool
 from ai_accounting_agent.tripletex_client import TripletexApiError, TripletexClient
 
 DEFAULT_BANK_ACCOUNT_NUMBER = "86011117947"
-PRE_ANNOUNCE_TOOL_NAMES = {"announce_step", "search_tripletex_reference", "get_today_date"}
+ATTACHMENT_EXTRACTION_TOOL_NAME = "extract_attachment_data"
+PRE_ANNOUNCE_TOOL_NAMES = {
+    "announce_step",
+    "search_tripletex_reference",
+    "get_today_date",
+    ATTACHMENT_EXTRACTION_TOOL_NAME,
+}
 
 FIND_API_SYSTEM_PROMPT = """\
 You are a Tripletex API specialist. You receive the full API documentation and a request describing what the caller needs to accomplish.
@@ -91,6 +106,21 @@ MULTI-STEP NOTE: (only if applicable)
 class StepState:
     has_announced_step: bool = False
     history: list[dict[str, Any]] = field(default_factory=list)
+    created_entities: list[dict[str, Any]] = field(default_factory=list)
+    attachment_extractor_availability_logged: bool = False
+    attachment_extractor_available: bool | None = None
+    inspected_endpoints: set[tuple[str, str]] = field(default_factory=set)
+    search_call_count: int = 0
+
+    def track_entity(self, entity_type: str, data: dict[str, Any]) -> None:
+        self.created_entities.append({"type": entity_type, **data})
+
+
+@dataclass(slots=True)
+class RetryGuidance:
+    retryable: bool
+    classification: str
+    hint: str | None = None
 
 
 @dataclass(slots=True)
@@ -190,6 +220,18 @@ async def prepare_tripletex_tools(
     ctx: RunContext[Any],
     tool_defs: list[ToolDefinition],
 ) -> list[ToolDefinition] | None:
+    attachment_count = len(getattr(ctx.deps.request, "files", []))
+    if attachment_count and not ctx.deps.step_state.attachment_extractor_availability_logged:
+        available_names = {tool_def.name for tool_def in tool_defs}
+        extractor_available = ATTACHMENT_EXTRACTION_TOOL_NAME in available_names
+        ctx.deps.step_state.attachment_extractor_availability_logged = True
+        ctx.deps.step_state.attachment_extractor_available = extractor_available
+        log_event(
+            "attachment_extractor_availability",
+            run_id=ctx.deps.run_id,
+            attachment_count=attachment_count,
+            extractor_available=extractor_available,
+        )
     if ctx.deps.step_state.has_announced_step:
         return tool_defs
     return [tool_def for tool_def in tool_defs if tool_def.name in PRE_ANNOUNCE_TOOL_NAMES]
@@ -217,6 +259,25 @@ class TripletexService:
 
     def search_tripletex_reference(self, *, query: str, max_results: int = 5) -> list[dict[str, Any]]:
         return self.reference_index.search(query, max_results=max_results)
+
+    async def extract_attachment_data(
+        self,
+        *,
+        task_prompt: str,
+        files: list[Any],
+    ) -> dict[str, Any]:
+        attachments = [
+            file
+            if isinstance(file, PreparedAttachment)
+            else PreparedAttachment(filename=file.filename, mime_type=file.mime_type, data=file.data)
+            for file in files
+        ]
+        report = await extract_attachments(
+            run_id=self.run_id,
+            task_prompt=task_prompt,
+            attachments=attachments,
+        )
+        return report.model_dump(mode="python")
 
     def _require_step(self) -> None:
         if not self.step_state.has_announced_step:
@@ -265,74 +326,189 @@ class TripletexService:
         return entries
 
     @classmethod
-    def _tripletex_retry_message(cls, *, operation: str, exc: TripletexApiError) -> str | None:
+    def _response_message(cls, response_body: Any) -> str:
+        if not isinstance(response_body, dict):
+            return ""
+        return str(response_body.get("error", "") or response_body.get("message", "") or "")
+
+    @classmethod
+    def _tripletex_retry_guidance(cls, *, operation: str, exc: TripletexApiError) -> RetryGuidance | None:
         if exc.status_code in {401, 403}:
-            body_message = ""
-            if isinstance(exc.response_body, dict):
-                body_message = exc.response_body.get("error", "") or exc.response_body.get("message", "")
-            return (
-                f"Tripletex returned {exc.status_code} for {operation}. "
-                f"Authentication failed: {body_message}. "
-                "The session token may be expired or invalid. Do not retry — report this failure."
+            return RetryGuidance(
+                retryable=False,
+                classification="auth_failure",
+                hint=(
+                    f"Tripletex returned {exc.status_code} for {operation}. "
+                    f"Authentication failed: {cls._response_message(exc.response_body)}. "
+                    "The session token may be expired or invalid."
+                ),
+            )
+
+        body_message = cls._response_message(exc.response_body)
+        lowered_body_message = body_message.lower()
+        if "setup done by tripletex" in lowered_body_message:
+            return RetryGuidance(
+                retryable=False,
+                classification="permission_blocked",
+                hint=(
+                    f"Tripletex rejected {operation}: {body_message}. "
+                    "This endpoint requires sandbox setup or permissions that are not available."
+                ),
+            )
+
+        if exc.status_code == 404:
+            return RetryGuidance(
+                retryable=True,
+                classification="entity_not_found",
+                hint=(
+                    f"Tripletex could not find the entity for {operation}: {body_message or exc}. "
+                    "Re-look up the entity with get_reference_data or a safe GET using exact identifiers, "
+                    "then retry with the fresh ID. Only retry after changing the request."
+                ),
             )
 
         if exc.status_code not in {400, 409, 422}:
             return None
 
+        if exc.status_code == 409:
+            return RetryGuidance(
+                retryable=True,
+                classification="stale_version",
+                hint=(
+                    f"Tripletex returned 409 Conflict for {operation}. "
+                    "Re-fetch the entity to get its current version, then retry sequentially with the updated payload."
+                ),
+            )
+
         entries = cls._validation_entries(exc.response_body)
-        for field, message in entries:
-            field_name = field or ""
+        for val_field, message in entries:
+            field_name = val_field or ""
             message_text = message or ""
+            lowered_message = message_text.lower()
+            if field_name == "openPostings" or ("dato er ugyldig" in lowered_message and "openpost" in lowered_message):
+                return RetryGuidance(
+                    retryable=True,
+                    classification="open_post_lookup",
+                    hint=(
+                        f"Tripletex rejected {operation}: {message_text}. "
+                        "Use get_open_posts or GET /ledger/posting/openPost with the required date parameter. "
+                        "Do not retry /ledger/posting with openPostings=true. Only retry after changing the endpoint or params."
+                    ),
+                )
             if field_name == "organizationNumber" or "Organisasjonsnummeret" in message_text:
-                return (
-                    "Tripletex rejected organizationNumber. Use exactly 9 digits with no spaces, punctuation, "
-                    "or MVA suffix. Normalize examples like '998 877 665 MVA' to '998877665', or omit "
-                    "organization_number and retry."
+                return RetryGuidance(
+                    retryable=True,
+                    classification="organization_number",
+                    hint=(
+                        "Tripletex rejected organizationNumber. Use exactly 9 digits with no spaces, punctuation, "
+                        "or MVA suffix. Normalize examples like '998 877 665 MVA' to '998877665', or omit "
+                        "organization_number and retry. Only retry after changing the payload."
+                    ),
                 )
-            if "allerede en bruker" in message_text or "already exists" in message_text.lower():
-                return (
-                    f"Tripletex rejected {operation}: {message_text}. "
-                    "An entity with this email/identifier already exists. "
-                    "Use get_reference_data to look up the existing entity by email and reuse its ID."
+            if "allerede en bruker" in message_text or "already exists" in lowered_message:
+                return RetryGuidance(
+                    retryable=True,
+                    classification="duplicate_entity",
+                    hint=(
+                        f"Tripletex rejected {operation}: {message_text}. "
+                        "An entity with this email or identifier already exists. "
+                        "Use get_reference_data to look up the existing entity and reuse its ID. "
+                        "Only retry after switching to the existing entity."
+                    ),
                 )
-            if "arbeidsforhold" in message_text or "employment" in message_text.lower():
-                return (
-                    f"Tripletex rejected {operation}: {message_text}. "
-                    "The employee needs an active employment record. The run_salary_transaction tool "
-                    "handles this automatically — retry the same call."
+            if (
+                "brukergrens" in lowered_message
+                or "user limit" in lowered_message
+                or "lisens" in lowered_message
+                or "license" in lowered_message
+                or "antall brukere" in lowered_message
+            ):
+                return RetryGuidance(
+                    retryable=True,
+                    classification="user_limit",
+                    hint=(
+                        f"Tripletex rejected {operation}: {message_text}. "
+                        "Sandbox user license limit reached. Retry with user_type='NO_ACCESS'. "
+                        "Only downgrade for this specific error."
+                    ),
                 )
-            if "låst til mva-kode" in message_text or "locked to vat" in message_text.lower():
-                return (
-                    f"Account is locked to a specific VAT code ({message_text}). "
-                    "Use the locked vatType on this posting, or pick a different account. "
-                    "Do NOT attempt to modify the ledger account itself. "
-                    "To find an alternative account, use get_reference_data(accounts) and filter by number range "
-                    "(e.g. accounts with number between 6000-6999 for expenses). Do NOT use 'id' filters with '>' syntax."
+            if "arbeidsforhold" in message_text or "employment" in lowered_message:
+                return RetryGuidance(
+                    retryable=True,
+                    classification="missing_employment",
+                    hint=(
+                        f"Tripletex rejected {operation}: {message_text}. "
+                        "The employee needs an active employment record linked to a division. "
+                        "Create or verify the employment first, then retry the original call with the corrected state."
+                    ),
+                )
+            if "låst til mva-kode" in message_text or "locked to vat" in lowered_message:
+                return RetryGuidance(
+                    retryable=True,
+                    classification="vat_locked_account",
+                    hint=(
+                        f"Account is locked to a specific VAT code ({message_text}). "
+                        "Use the locked vatType on this posting, or pick a different account. "
+                        "Do NOT attempt to modify the ledger account itself. "
+                        "To find an alternative account, use get_reference_data(accounts) and filter by number range "
+                        "(e.g. accounts with number between 6000-6999 for expenses). Do NOT use 'id' filters with '>' syntax."
+                    ),
                 )
 
         if entries:
             rendered = "; ".join(
                 f"{field}: {message}" if field else str(message) for field, message in entries if field or message
             )
-            return f"Tripletex rejected {operation}: {rendered}. Fix the payload and retry once."
+            return RetryGuidance(
+                retryable=True,
+                classification="validation_error",
+                hint=(
+                    f"Tripletex rejected {operation}: {rendered}. "
+                    "Fix the payload based on these validation errors and retry once with a meaningfully changed request."
+                ),
+            )
 
-        if isinstance(exc.response_body, dict):
-            message = exc.response_body.get("message")
-            if isinstance(message, str) and message.strip():
-                return f"Tripletex rejected {operation}: {message}. Fix the payload and retry once."
+        if body_message.strip():
+            return RetryGuidance(
+                retryable=True,
+                classification="validation_error",
+                hint=(
+                    f"Tripletex rejected {operation}: {body_message}. "
+                    "Fix the payload or lookup strategy and retry once with a meaningfully changed request."
+                ),
+            )
 
         return None
 
     def _maybe_raise_tripletex_retry(self, *, operation: str, exc: TripletexApiError) -> None:
-        retry_message = self._tripletex_retry_message(operation=operation, exc=exc)
-        if retry_message is not None:
-            raise ModelRetry(retry_message) from exc
+        guidance = self._tripletex_retry_guidance(operation=operation, exc=exc)
+        if guidance is not None and guidance.retryable and guidance.hint is not None:
+            raise ModelRetry(guidance.hint) from exc
 
     def _call_with_tripletex_retry_hint(self, *, operation: str, call: Any) -> Any:
         try:
             return call()
         except TripletexApiError as exc:
-            self._maybe_raise_tripletex_retry(operation=operation, exc=exc)
+            guidance = self._tripletex_retry_guidance(operation=operation, exc=exc)
+            log_event(
+                "tripletex_retry_decision",
+                severity="WARNING" if guidance and guidance.retryable else "INFO",
+                run_id=self.run_id,
+                operation=operation,
+                status_code=exc.status_code,
+                retryable=guidance.retryable if guidance else False,
+                retry_classification=guidance.classification if guidance else "none",
+                retry_hint=guidance.hint if guidance else None,
+                response_body=exc.response_body,
+            )
+            if guidance is not None and guidance.retryable and guidance.hint is not None:
+                raise ModelRetry(guidance.hint) from exc
+            if exc.status_code and exc.status_code >= 500:
+                raise ModelRetry(
+                    f"Tripletex returned server error {exc.status_code} for {operation}. "
+                    "This may be transient — retry this operation once. "
+                    "If it fails again, skip it and proceed with remaining tasks."
+                ) from exc
             raise
 
     @staticmethod
@@ -400,6 +576,13 @@ class TripletexService:
                 ("invoiceDateFrom", "invoiceDateTo"),
                 hint="Use create_invoice for new invoices, or pass both invoiceDate filters for historical reads.",
             )
+        if current_path == "/invoice/details":
+            self._require_collection_filters(
+                current_path,
+                current_params,
+                ("invoiceDateFrom", "invoiceDateTo"),
+                hint="To get details for a specific invoice, use GET /invoice/details/{id}. For collection reads, provide invoiceDateFrom and invoiceDateTo.",
+            )
         if current_path == "/ledger/voucher":
             self._require_collection_filters(
                 current_path,
@@ -412,7 +595,7 @@ class TripletexService:
                 current_path,
                 current_params,
                 ("dateFrom", "dateTo"),
-                hint="Use dateFrom/dateTo for posting reads. Do not probe the posting collection without a date range.",
+                hint="Use dateFrom/dateTo for posting reads. To view postings for a specific voucher, use GET /ledger/voucher/{id}?fields=postings(*) instead of querying /ledger/posting.",
             )
         if current_path == "/supplier" and "name" in current_params:
             raise ModelRetry(
@@ -433,6 +616,11 @@ class TripletexService:
     def tripletex_post(self, *, path: str, body: dict[str, Any], params: dict[str, Any] | None = None) -> Any:
         self._require_step()
         normalized_path, normalized_params = self._normalize_generic_path_and_params(path, params)
+        if "/ledger/voucher" in normalized_path.lower():
+            raise ModelRetry(
+                "tripletex_post cannot POST to /ledger/voucher. "
+                "Use the create_voucher tool instead — it handles posting construction, row validation, and auto-assignment."
+            )
         return self._call_with_tripletex_retry_hint(
             operation=f"POST {normalized_path}",
             call=lambda: self.client.post(normalized_path, params=normalized_params, json_body=body),
@@ -490,6 +678,21 @@ class TripletexService:
             raise ValueError(f"No ledger account found for number {number}.")
         return values[0]
 
+    def _supplier_voucher_type_id(self) -> int | None:
+        """Look up the 'Leverandørfaktura' voucher type ID so vendorInvoiceNumber is persisted."""
+        types = self._values(
+            self.client.get(
+                "/ledger/voucherType",
+                params={"count": 20, "fields": "id,name"},
+                cache_key="voucher_types:all",
+            )
+        )
+        for vt in types:
+            name = (vt.get("name") or "").lower()
+            if "leverandør" in name or "supplier" in name:
+                return int(vt["id"])
+        return None
+
     def _ensure_bank_account_number(self) -> dict[str, Any]:
         account = self._account_by_number(1920)
         account_id = int(account["id"])
@@ -530,6 +733,8 @@ class TripletexService:
                 normalized_posting["customer"] = posting["customer"]
             if posting.get("employee"):
                 normalized_posting["employee"] = posting["employee"]
+            if posting.get("project"):
+                normalized_posting["project"] = posting["project"]
             for dim_key in ("freeAccountingDimension1", "freeAccountingDimension2", "freeAccountingDimension3"):
                 if posting.get(dim_key):
                     normalized_posting[dim_key] = posting[dim_key]
@@ -586,25 +791,36 @@ class TripletexService:
                     params={
                         "email": payload.email,
                         "count": 1,
-                        "fields": "id,firstName,lastName,email,employeeNumber,userType,version",
+                        "fields": "id,firstName,lastName,email,employeeNumber,userType,dateOfBirth,version",
                     },
                 )
             )
             if existing:
                 return existing[0]
-        body = {
+        user_type = payload.user_type
+        if user_type == "STANDARD" and not payload.email:
+            user_type = "NO_ACCESS"
+
+        body: dict[str, Any] = {
             "firstName": payload.first_name,
             "lastName": payload.last_name,
-            "userType": payload.user_type,
+            "userType": user_type,
             "department": {"id": payload.department_id or self._default_department_id()},
         }
         if payload.email:
             body["email"] = payload.email
+        if payload.date_of_birth:
+            body["dateOfBirth"] = payload.date_of_birth
         response = self._call_with_tripletex_retry_hint(
             operation="employee creation",
             call=lambda: self.client.post("/employee", json_body=body),
         )
-        return self._value(response)
+        employee = self._value(response)
+        self.step_state.track_entity(
+            "employee",
+            {"id": employee["id"], "name": f"{employee.get('firstName', '')} {employee.get('lastName', '')}".strip()},
+        )
+        return employee
 
     def grant_employee_privileges(self, payload: GrantEmployeePrivilegesInput) -> dict[str, Any]:
         self._require_step()
@@ -657,7 +873,9 @@ class TripletexService:
             operation="customer creation",
             call=lambda: self.client.post("/customer", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("customer", {"id": entity["id"], "name": entity.get("name", "")})
+        return entity
 
     def create_supplier(self, payload: CreateSupplierInput) -> dict[str, Any]:
         self._require_step()
@@ -687,7 +905,9 @@ class TripletexService:
             operation="supplier creation",
             call=lambda: self.client.post("/supplier", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("supplier", {"id": entity["id"], "name": entity.get("name", "")})
+        return entity
 
     def create_product(self, payload: CreateProductInput) -> dict[str, Any]:
         self._require_step()
@@ -716,7 +936,9 @@ class TripletexService:
             operation="product creation",
             call=lambda: self.client.post("/product", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("product", {"id": entity["id"], "name": entity.get("name", "")})
+        return entity
 
     def create_project(self, payload: CreateProjectInput) -> dict[str, Any]:
         self._require_step()
@@ -736,7 +958,9 @@ class TripletexService:
             operation="project creation",
             call=lambda: self.client.post("/project", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("project", {"id": entity["id"], "name": entity.get("name", "")})
+        return entity
 
     def configure_project_billing(self, payload: ConfigureProjectBillingInput) -> dict[str, Any]:
         self._require_step()
@@ -782,7 +1006,7 @@ class TripletexService:
 
     def create_voucher(self, payload: CreateVoucherInput) -> dict[str, Any]:
         self._require_step()
-        body = {
+        body: dict[str, Any] = {
             "date": payload.date,
             "description": payload.description,
             "postings": self._validate_voucher_postings(
@@ -798,6 +1022,7 @@ class TripletexService:
                         "supplier": {"id": posting.supplier_id} if posting.supplier_id is not None else None,
                         "customer": {"id": posting.customer_id} if posting.customer_id is not None else None,
                         "employee": {"id": posting.employee_id} if posting.employee_id is not None else None,
+                        "project": {"id": posting.project_id} if posting.project_id is not None else None,
                         "freeAccountingDimension1": {"id": posting.free_accounting_dimension_1_id}
                         if posting.free_accounting_dimension_1_id is not None
                         else None,
@@ -807,6 +1032,7 @@ class TripletexService:
                         "freeAccountingDimension3": {"id": posting.free_accounting_dimension_3_id}
                         if posting.free_accounting_dimension_3_id is not None
                         else None,
+                        "termOfPayment": posting.term_of_payment if posting.term_of_payment is not None else None,
                     }
                     for posting in payload.postings
                 ]
@@ -814,6 +1040,9 @@ class TripletexService:
         }
         if payload.vendor_invoice_number:
             body["vendorInvoiceNumber"] = payload.vendor_invoice_number
+            supplier_vt_id = self._supplier_voucher_type_id()
+            if supplier_vt_id is not None:
+                body["voucherType"] = {"id": supplier_vt_id}
         response = self._call_with_tripletex_retry_hint(
             operation="voucher creation",
             call=lambda: self.client.post(
@@ -823,6 +1052,7 @@ class TripletexService:
             ),
         )
         voucher = self._value(response)
+        self.step_state.track_entity("voucher", {"id": voucher["id"], "name": voucher.get("description", "")})
         verified = self._value(self.client.get(f"/ledger/voucher/{voucher['id']}", params={"fields": "*"}))
         return {"voucher": voucher, "verified_voucher": verified}
 
@@ -851,7 +1081,9 @@ class TripletexService:
             operation="order creation",
             call=lambda: self.client.post("/order", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("order", {"id": entity["id"], "name": str(entity.get("number", ""))})
+        return entity
 
     def create_invoice(self, payload: CreateInvoiceInput) -> dict[str, Any]:
         self._require_step()
@@ -873,6 +1105,7 @@ class TripletexService:
                 ),
             )
         )
+        self.step_state.track_entity("invoice", {"id": invoice["id"], "name": str(invoice.get("invoiceNumber", ""))})
         verified = self._values(
             self.client.get(
                 "/invoice",
@@ -892,6 +1125,25 @@ class TripletexService:
                 "bankAccountNumber": bank_account.get("bankAccountNumber"),
             },
         }
+
+    def send_invoice(self, payload: SendInvoiceInput) -> dict[str, Any]:
+        self._require_step()
+        params: dict[str, Any] = {"sendType": payload.send_type}
+        if payload.override_email_address:
+            params["overrideEmailAddress"] = payload.override_email_address
+        result = self._call_with_tripletex_retry_hint(
+            operation="invoice send",
+            call=lambda: self.client.put(f"/invoice/{payload.invoice_id}/:send", params=params),
+        )
+        verified = self._value(
+            self.client.get(
+                f"/invoice/{payload.invoice_id}",
+                params={
+                    "fields": "id,invoiceNumber,invoiceDate,invoiceDueDate,customer(id,name),amount,amountOutstanding,version"
+                },
+            )
+        )
+        return {"send_result": result, "invoice": verified}
 
     def register_invoice_payment(self, payload: RegisterInvoicePaymentInput) -> dict[str, Any]:
         self._require_step()
@@ -919,6 +1171,31 @@ class TripletexService:
             )
         )
         return {"payment_result": result, "invoices": invoice}
+
+    def register_supplier_invoice_payment(self, payload: RegisterSupplierInvoicePaymentInput) -> dict[str, Any]:
+        self._require_step()
+        params: dict[str, Any] = {
+            "paymentType": payload.payment_type_id,
+            "paymentDate": payload.payment_date,
+            "partialPayment": payload.partial_payment,
+        }
+        if payload.amount is not None:
+            params["amount"] = payload.amount
+        if payload.kid_or_receiver_reference:
+            params["kidOrReceiverReference"] = payload.kid_or_receiver_reference
+        if payload.bban:
+            params["bban"] = payload.bban
+        result = self._call_with_tripletex_retry_hint(
+            operation="supplier invoice payment registration",
+            call=lambda: self.client.post(
+                f"/supplierInvoice/{payload.supplier_invoice_id}/:addPayment",
+                params=params,
+            ),
+        )
+        verified = self._value(
+            self.client.get(f"/supplierInvoice/{payload.supplier_invoice_id}", params={"fields": "*"})
+        )
+        return {"payment_result": result, "supplier_invoice": verified}
 
     def create_credit_note(self, payload: CreateCreditNoteInput) -> dict[str, Any]:
         self._require_step()
@@ -952,11 +1229,12 @@ class TripletexService:
                 "isDayTrip": payload.travel_details.is_day_trip,
                 "departureDate": payload.travel_details.departure_date,
                 "returnDate": payload.travel_details.return_date,
-                "departureFrom": payload.travel_details.departure_from,
                 "destination": payload.travel_details.destination,
                 "purpose": payload.travel_details.purpose,
             },
         }
+        if payload.travel_details.departure_from:
+            body["travelDetails"]["departureFrom"] = payload.travel_details.departure_from
         if payload.department_id is not None:
             body["department"] = {"id": payload.department_id}
         if payload.project_id is not None:
@@ -969,7 +1247,9 @@ class TripletexService:
             operation="travel expense creation",
             call=lambda: self.client.post("/travelExpense", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("travel_expense", {"id": entity["id"], "name": entity.get("title", "")})
+        return entity
 
     def add_travel_expense_cost(self, payload: AddTravelExpenseCostInput) -> dict[str, Any]:
         self._require_step()
@@ -991,9 +1271,12 @@ class TripletexService:
 
     def transition_travel_expense(self, payload: TransitionTravelExpenseInput) -> dict[str, Any]:
         self._require_step()
+        params: dict[str, Any] = {"id": payload.travel_expense_id}
+        if payload.date and payload.action == "createVouchers":
+            params["date"] = payload.date
         result = self._call_with_tripletex_retry_hint(
             operation=f"travel expense transition {payload.action}",
-            call=lambda: self.client.put(f"/travelExpense/:{payload.action}", params={"id": payload.travel_expense_id}),
+            call=lambda: self.client.put(f"/travelExpense/:{payload.action}", params=params),
         )
         return {"action": payload.action, "result": result}
 
@@ -1013,7 +1296,9 @@ class TripletexService:
             operation="timesheet entry creation",
             call=lambda: self.client.post("/timesheet/entry", json_body=body),
         )
-        return self._value(response)
+        entity = self._value(response)
+        self.step_state.track_entity("timesheet_entry", {"id": entity["id"], "name": ""})
+        return entity
 
     def get_timesheet_activities(self, payload: GetTimesheetActivitiesInput) -> dict[str, Any]:
         self._require_step()
@@ -1025,7 +1310,18 @@ class TripletexService:
                 "/activity/>forTimeSheet", params=params, cache_key=json.dumps(params, sort_keys=True)
             ),
         )
-        return {"values": self._values(response)}
+        values = self._values(response)
+
+        def _activity_priority(item: dict[str, Any]) -> tuple[int, str]:
+            name = str(item.get("name", "")).lower()
+            if any(term in name for term in ("fakturer", "chargeable", "billable")):
+                return (0, name)
+            if any(term in name for term in ("administrasjon", "admin", "internal", "intern")):
+                return (2, name)
+            return (1, name)
+
+        values.sort(key=_activity_priority)
+        return {"values": values}
 
     def create_contact(self, payload: CreateContactInput) -> dict[str, Any]:
         self._require_step()
@@ -1121,6 +1417,10 @@ class TripletexService:
         }
         if payload.overnight_accommodation is not None:
             body["overnightAccommodation"] = payload.overnight_accommodation
+        if payload.rate is not None:
+            body["rate"] = payload.rate
+        if payload.amount is not None:
+            body["amount"] = payload.amount
         response = self._call_with_tripletex_retry_hint(
             operation="travel per-diem compensation creation",
             call=lambda: self.client.post("/travelExpense/perDiemCompensation", json_body=body),
@@ -1157,6 +1457,16 @@ class TripletexService:
         )
         return int(self._value(div_response)["id"])
 
+    def _employee_with_birth_date(self, employee_id: int) -> dict[str, Any]:
+        employee = self._value(self.client.get(f"/employee/{employee_id}", params={"fields": "id,version,dateOfBirth"}))
+        if employee.get("dateOfBirth"):
+            return employee
+        raise ModelRetry(
+            f"Employee {employee_id} is missing dateOfBirth. "
+            "Do not invent one. Update the employee with the real date_of_birth from the prompt or attachment, "
+            "or choose an existing employee that already has dateOfBirth set."
+        )
+
     def create_employment(self, payload: CreateEmploymentInput) -> dict[str, Any]:
         self._require_step()
         existing = self._values(
@@ -1168,16 +1478,19 @@ class TripletexService:
         if existing:
             return existing[0]
 
-        employee = self._value(
-            self.client.get(f"/employee/{payload.employee_id}", params={"fields": "id,version,dateOfBirth"})
-        )
-        if not employee.get("dateOfBirth"):
-            self.client.put(
-                f"/employee/{payload.employee_id}",
-                json_body={"id": employee["id"], "version": employee["version"], "dateOfBirth": "1990-01-01"},
-            )
+        self._employee_with_birth_date(payload.employee_id)
 
-        division_id = payload.division_id or self._ensure_division(payload.start_date)
+        division_id: int | None = None
+        if payload.division_id:
+            # Validate the provided ID is actually a division, not a department
+            divisions = self._values(
+                self.client.get("/company/divisions", params={"count": 50, "fields": "id"}, cache_key="divisions:ids")
+            )
+            valid_ids = {int(d["id"]) for d in divisions}
+            if payload.division_id in valid_ids:
+                division_id = payload.division_id
+        if division_id is None:
+            division_id = self._ensure_division(payload.start_date)
 
         emp_body: dict[str, Any] = {
             "employee": {"id": payload.employee_id},
@@ -1191,6 +1504,128 @@ class TripletexService:
         )
         return self._value(response)
 
+    def set_employment_details(self, payload: SetEmploymentDetailsInput) -> dict[str, Any]:
+        self._require_step()
+        body: dict[str, Any] = {
+            "employment": {"id": payload.employment_id},
+            "date": payload.date,
+            "employmentType": payload.employment_type,
+            "employmentForm": payload.employment_form,
+            "percentageOfFullTimeEquivalent": payload.percentage_of_full_time_equivalent,
+            "workingHoursScheme": payload.working_hours_scheme,
+            "remunerationType": "MONTHLY_WAGE" if payload.annual_salary else "HOURLY_WAGE",
+        }
+        if payload.annual_salary is not None:
+            body["annualSalary"] = payload.annual_salary
+        if payload.hourly_wage is not None:
+            body["hourlyWage"] = payload.hourly_wage
+        if payload.occupation_code:
+            occupations = self._values(
+                self.client.get(
+                    "/employee/employment/occupationCode",
+                    params={"nameNO": payload.occupation_code, "count": 5},
+                    cache_key=f"occupation_code:{payload.occupation_code}",
+                )
+            )
+            if not occupations:
+                occupations = self._values(
+                    self.client.get(
+                        "/employee/employment/occupationCode",
+                        params={"code": payload.occupation_code, "count": 5},
+                        cache_key=f"occupation_code_by_code:{payload.occupation_code}",
+                    )
+                )
+            if occupations:
+                body["occupationCode"] = {"id": occupations[0]["id"]}
+        response = self._call_with_tripletex_retry_hint(
+            operation="employment details creation",
+            call=lambda: self.client.post("/employee/employment/details", json_body=body),
+        )
+        return self._value(response)
+
+    def set_standard_time(self, payload: SetStandardTimeInput) -> dict[str, Any]:
+        self._require_step()
+        body: dict[str, Any] = {
+            "employee": {"id": payload.employee_id},
+            "fromDate": payload.from_date,
+            "hoursPerDay": payload.hours_per_day,
+        }
+        response = self._call_with_tripletex_retry_hint(
+            operation="standard time creation",
+            call=lambda: self.client.post("/employee/standardTime", json_body=body),
+        )
+        return self._value(response)
+
+    def create_project_activity(self, payload: CreateProjectActivityInput) -> dict[str, Any]:
+        self._require_step()
+        body: dict[str, Any] = {
+            "project": {"id": payload.project_id},
+            "activity": {
+                "name": payload.activity_name,
+                "activityType": "PROJECT_SPECIFIC_ACTIVITY",
+            },
+        }
+        try:
+            response = self._call_with_tripletex_retry_hint(
+                operation="project activity creation",
+                call=lambda: self.client.post("/project/projectActivity", json_body=body),
+            )
+            return self._value(response)
+        except Exception as exc:
+            exc_str = str(exc)
+            if "Duplicate entry" in exc_str or "409" in exc_str or "stale_version" in exc_str:
+                raise ModelRetry(
+                    f"A project activity named '{payload.activity_name}' already exists for project {payload.project_id}. "
+                    "Use get_timesheet_activities(project_id, date) to retrieve its activity_id and use it directly "
+                    "in create_timesheet_entry instead of creating a new activity."
+                )
+            raise
+
+    def get_account_balances(self, payload: GetAccountBalancesInput) -> dict[str, Any]:
+        self._require_step()
+        # Build account number lookup if filtering by range
+        acct_map: dict[int, dict[str, Any]] = {}
+        valid_ids: set[int] | None = None
+        if payload.account_number_from is not None or payload.account_number_to is not None:
+            acct_params: dict[str, Any] = {"count": 1000, "fields": "id,number,name"}
+            if payload.account_number_from is not None:
+                acct_params["numberFrom"] = payload.account_number_from
+            if payload.account_number_to is not None:
+                acct_params["numberTo"] = payload.account_number_to
+            accounts = self._values(self.client.get("/ledger/account", params=acct_params))
+            if not accounts:
+                return {"values": []}
+            acct_map = {int(a["id"]): a for a in accounts}
+            valid_ids = set(acct_map.keys())
+
+        # Fetch the full ledger — accountId only accepts a single int, so we filter in Python
+        params: dict[str, Any] = {
+            "dateFrom": payload.date_from,
+            "dateTo": payload.date_to,
+            "count": 1000,
+        }
+        response = self._call_with_tripletex_retry_hint(
+            operation="ledger query",
+            call=lambda: self.client.get("/ledger", params=params),
+        )
+        entries = self._values(response)
+
+        # Filter by account range and enrich with account details
+        if valid_ids is not None:
+            entries = [
+                e
+                for e in entries
+                if isinstance(e, dict)
+                and isinstance(e.get("account"), dict)
+                and int(e["account"].get("id", 0)) in valid_ids
+            ]
+        for entry in entries:
+            acct = entry.get("account", {})
+            acct_id = int(acct.get("id", 0))
+            if acct_id in acct_map:
+                entry["account"] = acct_map[acct_id]
+        return {"values": entries}
+
     def _ensure_employee_employment(self, employee_id: int, start_date: str) -> None:
         employments = self._values(
             self.client.get(
@@ -1200,21 +1635,74 @@ class TripletexService:
         if employments:
             return
 
-        employee = self._value(self.client.get(f"/employee/{employee_id}", params={"fields": "id,version,dateOfBirth"}))
-        if not employee.get("dateOfBirth"):
-            self.client.put(
-                f"/employee/{employee_id}",
-                json_body={"id": employee["id"], "version": employee["version"], "dateOfBirth": "1990-01-01"},
-            )
-
-        division_id = self._ensure_division(start_date)
+        # Use the first of the month for the start date so they get full salary for the month
+        first_of_month = f"{start_date[:8]}01"
+        division_id = self._ensure_division(first_of_month)
 
         emp_body: dict[str, Any] = {
             "employee": {"id": employee_id},
-            "startDate": start_date,
+            "startDate": first_of_month,
             "division": {"id": division_id},
+            "isMainEmployer": True,
         }
-        self.client.post("/employee/employment", json_body=emp_body)
+        try:
+            emp = self._value(self.client.post("/employee/employment", json_body=emp_body))
+        except TripletexApiError as exc:
+            # Tripletex requires dateOfBirth before employment can be created.
+            # For salary tasks that provide no DOB, inject a safe default and retry once.
+            err_body = getattr(exc, "response_body", {}) or {}
+            validation_msgs = err_body.get("validationMessages") or []
+            dob_missing = any("dateOfBirth" in str(m) for m in validation_msgs) or "dateOfBirth" in str(exc)
+            if exc.status_code == 422 and dob_missing:
+                employee_current = self._value(self.client.get(f"/employee/{employee_id}", params={"fields": "*"}))
+                employee_current["dateOfBirth"] = "1990-01-01"
+                self.client.put(f"/employee/{employee_id}", json_body=employee_current)
+                emp = self._value(self.client.post("/employee/employment", json_body=emp_body))
+            else:
+                raise
+
+        # Also set employment details so the employee has 100% full time equivalent
+        details_body: dict[str, Any] = {
+            "employment": {"id": emp["id"]},
+            "date": first_of_month,
+            "employmentType": "ORDINARY",
+            "employmentForm": "PERMANENT",
+            "remunerationType": "MONTHLY_WAGE",
+            "workingHoursScheme": "NOT_SHIFT",
+            "percentageOfFullTimeEquivalent": 100.0,
+        }
+        self.client.post("/employee/employment/details", json_body=details_body)
+
+    def _verify_salary_transaction(
+        self,
+        *,
+        transaction: dict[str, Any],
+        payload: RunSalaryTransactionInput,
+    ) -> dict[str, Any]:
+        verified_payslips: list[dict[str, Any]] = []
+        wage_transaction_id = transaction.get("id")
+        for payslip in payload.payslips:
+            params: dict[str, Any] = {
+                "employeeId": payslip.employee_id,
+                "voucherDateFrom": payslip.date,
+                "voucherDateTo": (date.fromisoformat(payslip.date) + timedelta(days=1)).isoformat(),
+                "count": 20,
+                "fields": "id,date,employee(id,firstName,lastName),grossAmount,specifications(salaryType(id,name),amount,rate,count)",
+            }
+            if wage_transaction_id is not None:
+                params["wageTransactionId"] = wage_transaction_id
+            verified_payslips.extend(self._values(self.client.get("/salary/payslip", params=params)))
+
+        compilations = [
+            self._value(
+                self.client.get(
+                    "/salary/compilation",
+                    params={"employeeId": payslip.employee_id, "year": payslip.year, "fields": "*"},
+                )
+            )
+            for payslip in payload.payslips
+        ]
+        return {"verified_payslips": verified_payslips, "salary_compilations": compilations}
 
     def run_salary_transaction(self, payload: RunSalaryTransactionInput) -> dict[str, Any]:
         self._require_step()
@@ -1254,7 +1742,9 @@ class TripletexService:
                 json_body=body,
             ),
         )
-        return self._value(response)
+        transaction = self._value(response)
+        verification = self._verify_salary_transaction(transaction=transaction, payload=payload)
+        return {"transaction": transaction, **verification}
 
     def upload_attachment(self, payload: UploadAttachmentInput, *, files: list[Any]) -> dict[str, Any]:
         self._require_step()
@@ -1454,6 +1944,16 @@ class TripletexService:
                     self.client.get("/invoice/paymentType", params=params, cache_key=json.dumps(params, sort_keys=True))
                 )
             }
+        if payload.reference == "outgoing_payment_types":
+            params = {"count": 20}
+            params.update(filters)
+            return {
+                "values": self._values(
+                    self.client.get(
+                        "/ledger/paymentTypeOut", params=params, cache_key=json.dumps(params, sort_keys=True)
+                    )
+                )
+            }
         if payload.reference == "travel_cost_categories":
             params = {"count": 25}
             params.update(filters)
@@ -1566,6 +2066,58 @@ class TripletexService:
 
         raise ValueError(f"Unsupported reference lookup: {payload.reference}")
 
+    def get_open_posts(self, payload: GetOpenPostsInput) -> dict[str, Any]:
+        self._require_step()
+        params: dict[str, Any] = {"date": payload.date}
+        optional_params = {
+            "accountId": payload.account_id,
+            "supplierId": payload.supplier_id,
+            "customerId": payload.customer_id,
+            "employeeId": payload.employee_id,
+            "departmentId": payload.department_id,
+            "projectId": payload.project_id,
+            "productId": payload.product_id,
+            "accountNumberFrom": payload.account_number_from,
+            "accountNumberTo": payload.account_number_to,
+        }
+        params.update({key: value for key, value in optional_params.items() if value is not None})
+        response = self._call_with_tripletex_retry_hint(
+            operation="open post lookup",
+            call=lambda: self.client.get("/ledger/posting/openPost", params=params),
+        )
+        values = self._values(response)
+        normalized: list[dict[str, Any]] = []
+        for item in values:
+            if not isinstance(item, dict):
+                continue
+            supplier = item.get("supplier") or {}
+            customer = item.get("customer") or {}
+            invoice = item.get("invoice") or {}
+            supplier_invoice = item.get("supplierInvoice") or {}
+            voucher = item.get("voucher") or {}
+            normalized.append(
+                {
+                    "id": item.get("id"),
+                    "date": item.get("date"),
+                    "amount": item.get("amount")
+                    or item.get("amountGross")
+                    or item.get("openAmount")
+                    or item.get("amountOutstanding"),
+                    "account": item.get("account"),
+                    "voucher_id": voucher.get("id"),
+                    "invoice_id": invoice.get("id"),
+                    "invoice_number": invoice.get("invoiceNumber"),
+                    "supplier_invoice_id": supplier_invoice.get("id"),
+                    "supplier_invoice_number": supplier_invoice.get("invoiceNumber"),
+                    "customer_id": customer.get("id"),
+                    "customer_name": customer.get("name"),
+                    "supplier_id": supplier.get("id"),
+                    "supplier_name": supplier.get("name"),
+                    "raw": item,
+                }
+            )
+        return {"values": values, "normalized": normalized}
+
     async def find_api(self, need: str) -> dict[str, Any]:
         """Spawn a sub-agent to find the right Tripletex API endpoint for a given need."""
         self._require_step()
@@ -1628,6 +2180,12 @@ class TripletexService:
         if not path.startswith("/"):
             path = f"/{path}"
 
+        if payload.method.upper() == "POST" and "/ledger/voucher" in path.lower():
+            raise ModelRetry(
+                "raw_api_call cannot POST to /ledger/voucher. "
+                "Use the create_voucher tool instead — it handles posting construction, row validation, and auto-assignment."
+            )
+
         return self._call_with_tripletex_retry_hint(
             operation=f"{payload.method} {path}",
             call=lambda: self.client.request(
@@ -1683,6 +2241,35 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
             "day": str(today.day),
         }
 
+    @agent.tool(retries=1)
+    @log_tool
+    async def extract_attachment_data(ctx: RunContext[Any]) -> dict[str, Any]:
+        """Extract the contents of the request attachments via a dedicated Gemini sub-agent.
+
+        WHEN TO USE:
+        - Immediately after announce_step/get_today_date whenever attachments are present
+        - Before creating vouchers, employees, travel expenses, or invoices from PDFs/images/receipts
+
+        WHAT IT RETURNS:
+        - One extracted entry per attachment with summary, extracted text, key fields, and warnings
+        - extraction_method tells you whether a Gemini sub-agent handled the file or it was decoded directly
+
+        Use the extracted fields as the primary source of truth, and still upload the original file later
+        when the workflow requires it.
+        """
+        attachments = [
+            PreparedAttachment(
+                filename=solve_file.filename,
+                mime_type=solve_file.mime_type,
+                data=solve_file.decoded_bytes(),
+            )
+            for solve_file in ctx.deps.request.files
+        ]
+        return await _service(ctx).extract_attachment_data(
+            task_prompt=ctx.deps.request.prompt,
+            files=attachments,
+        )
+
     @agent.tool
     @log_tool
     def search_tripletex_reference(ctx: RunContext[Any], query: str, max_results: int = 5) -> list[dict[str, Any]]:
@@ -1698,7 +2285,7 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         """
         return _service(ctx).search_tripletex_reference(query=query, max_results=max_results)
 
-    @agent.tool(retries=1)
+    @agent.tool(retries=3)
     @log_tool
     def tripletex_get(
         ctx: RunContext[Any],
@@ -1769,6 +2356,8 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         WHEN TO USE: Task asks to create/register a new employee.
         REQUIRED: first_name, last_name. department_id defaults to the company's first department if omitted.
         user_type defaults to "STANDARD". Use "EXTENDED" for full access, "NO_ACCESS" for no login.
+        IMPORTANT: If the prompt provides a date of birth, ALWAYS set date_of_birth here.
+        Setting it upfront avoids a separate update_employee call and prevents 409 version conflicts.
 
         If an employee with the given email already exists, returns the existing employee (no duplicate created).
         To set a start date for the employee, call create_employment after this tool.
@@ -1874,7 +2463,7 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         CRITICAL RULES:
         - Postings must balance: signed amount_gross values MUST sum to exactly 0
         - Each posting needs its own date field (typically same as voucher date)
-        - Rows auto-number from 1 if omitted
+        - Rows auto-number from 1 if omitted. NEVER use row=0 (reserved for system lines).
         - VAT-locked accounts require vat_type_id on the posting (e.g. account 3200 needs vat_type_id=6)
         - Accounts with ledgerType VENDOR require supplier_id on that posting
         - Accounts with ledgerType CUSTOMER require customer_id on that posting
@@ -1886,7 +2475,7 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         - Set vendor_invoice_number when the invoice number is available
 
         Look up account IDs first: get_reference_data(reference="accounts", filters={"number": 2400})
-        Common expense accounts: 4000 (purchases), 6300 (rent), 6900 (telecom), 7000 (depreciation).
+        Common expense accounts: 4000 (purchases), 6300 (rent), 6810 (data/software/cloud), 6900 (telecom), 7000 (depreciation).
 
         ACCOUNTING DIMENSIONS: To link a posting to a custom dimension, set
         free_accounting_dimension_1_id (or 2/3) to the dimension value ID
@@ -1917,9 +2506,10 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
     def create_invoice(ctx: RunContext[Any], payload: CreateInvoiceInput) -> dict[str, Any]:
         """Create and verify a Tripletex invoice from one or more existing orders.
 
-        WHEN TO USE: After create_order. This is the final step in the invoicing flow.
+        WHEN TO USE: After create_order. This creates the invoice itself.
         REQUIRED: customer_id, invoice_date, invoice_due_date (YYYY-MM-DD), order_ids (list of order IDs).
-        send_to_customer defaults to false. Set to TRUE when the prompt explicitly asks to
+        send_to_customer defaults to false. Prefer the explicit flow
+        create_invoice(send_to_customer=false) → send_invoice when the prompt explicitly asks to
         send/envie/senden/envoyez/schicken/invia the invoice to the customer.
 
         PREREQUISITES (handled automatically by this tool):
@@ -1927,6 +2517,21 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         - At least one order must exist (use create_order first).
         """
         return _service(ctx).create_invoice(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def send_invoice(ctx: RunContext[Any], payload: SendInvoiceInput) -> dict[str, Any]:
+        """Send an existing invoice to the customer.
+
+        WHEN TO USE: After create_invoice, when the task explicitly asks to send/email the invoice.
+        REQUIRED: invoice_id. send_type defaults to EMAIL.
+        Optional: override_email_address when the prompt provides a different recipient.
+
+        PREFERRED FLOW:
+        1. create_invoice(..., send_to_customer=false)
+        2. send_invoice(invoice_id=...)
+        """
+        return _service(ctx).send_invoice(payload)
 
     @agent.tool(retries=1)
     @log_tool
@@ -1941,6 +2546,23 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         Common types: "Kontant" and "Betalt til bank" — IDs vary per sandbox, always look them up.
         """
         return _service(ctx).register_invoice_payment(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def register_supplier_invoice_payment(
+        ctx: RunContext[Any],
+        payload: RegisterSupplierInvoicePaymentInput,
+    ) -> dict[str, Any]:
+        """Register payment on an existing supplier invoice.
+
+        WHEN TO USE: For supplier payouts, bank reconciliation, or prompts that ask to settle a supplier invoice.
+        REQUIRED: supplier_invoice_id, payment_type_id, payment_date.
+        Optional: amount for partial payments, partial_payment=true to allow multiple settlements.
+
+        PREREQUISITE LOOKUPS:
+          get_reference_data(reference="outgoing_payment_types")
+        """
+        return _service(ctx).register_supplier_invoice_payment(payload)
 
     @agent.tool(retries=1)
     @log_tool
@@ -1988,8 +2610,9 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         """Create a travel expense with nested travelDetails.
 
         WHEN TO USE: When the task asks to create/register a travel expense or business trip.
-        REQUIRED: title, travel_details (nested object with departure_date, return_date, departure_from,
+        REQUIRED: title, travel_details (nested object with departure_date, return_date,
         destination, purpose, is_day_trip, is_foreign_travel).
+        departure_from should only be set when it is known from the prompt or attachment.
 
         CRITICAL: All travel detail fields go inside travel_details, NOT at the root level.
         Putting them at root gives 422 "Feltet eksisterer ikke i objektet".
@@ -1999,7 +2622,9 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         1. create_travel_expense → travel_expense_id
         2. If per-diem: get_reference_data(travel_per_diem_rates) → add_travel_per_diem
         3. If costs: get_reference_data(travel_cost_categories) + get_reference_data(travel_payment_types) → add_travel_expense_cost (one call per cost line, sequentially)
-        4. transition_travel_expense(action="deliver") to submit for approval
+        4. transition_travel_expense(action="deliver")
+        5. transition_travel_expense(action="approve")
+        6. transition_travel_expense(action="createVouchers")
         """
         return _service(ctx).create_travel_expense(payload)
 
@@ -2053,7 +2678,8 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         REQUIRED: project_id, date (YYYY-MM-DD). employee_id defaults to logged-in employee.
 
         If the project doesn't exist yet, create it first with create_project.
-        Returns activities like "Fakturerbart arbeid", "Prosjektadministrasjon" with their IDs.
+        For normal billable project work, prefer chargeable/billable activities such as "Fakturerbart arbeid"
+        over administrative/internal ones such as "Prosjektadministrasjon".
         """
         return _service(ctx).get_timesheet_activities(payload)
 
@@ -2192,6 +2818,8 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         CRITICAL: After looking up salary_types and employee, call this tool IMMEDIATELY.
         Do NOT browse /salary/transaction, /ledger/voucher, or other read endpoints first.
         Unnecessary GETs waste API calls and can hit Tripletex 500 errors.
+
+        VERIFICATION: This tool verifies the resulting payslips and salary compilations after posting.
         """
         return _service(ctx).run_salary_transaction(payload)
 
@@ -2230,7 +2858,7 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         """Create a bank reconciliation entry.
 
         WHEN TO USE: When the task asks to reconcile a bank account for an accounting period.
-        REQUIRED: account_id (bank account, typically 1920), accounting_period_id.
+        REQUIRED: account_id (internal ID, not the account number), accounting_period_id.
 
         PREREQUISITE LOOKUPS:
           get_reference_data(reference="bank_accounts") → find bank account ID
@@ -2238,6 +2866,20 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         type defaults to "MANUAL". bank_account_closing_balance_currency defaults to 0.
         """
         return _service(ctx).create_bank_reconciliation(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def get_open_posts(ctx: RunContext[Any], payload: GetOpenPostsInput) -> dict[str, Any]:
+        """Fetch open (unsettled) postings using the curated open-post endpoint.
+
+        WHEN TO USE: For bank reconciliation, matching customer payments, supplier payouts,
+        and other workflows that need outstanding postings.
+        REQUIRED: date (YYYY-MM-DD).
+        Optional: account_id, customer_id, supplier_id, employee_id, project_id, account_number_from/to.
+
+        Use this instead of probing /ledger/posting with openPostings=true.
+        """
+        return _service(ctx).get_open_posts(payload)
 
     @agent.tool(retries=1)
     @log_tool
@@ -2281,6 +2923,7 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         - get_reference_data(reference="vat_settings") → company VAT registration status
         - get_reference_data(reference="vat_types") → all VAT codes with id, name, percentage
         - get_reference_data(reference="invoice_payment_types") → payment type IDs for register_invoice_payment
+        - get_reference_data(reference="outgoing_payment_types") → payment type IDs for register_supplier_invoice_payment
         - get_reference_data(reference="travel_cost_categories") → cost category IDs
         - get_reference_data(reference="travel_payment_types") → payment type IDs
         - get_reference_data(reference="currencies") → currency IDs (NOK=1, SEK=2, EUR=5, etc.)
@@ -2338,6 +2981,76 @@ def register_tripletex_tools(agent: Agent[Any]) -> None:
         FLOW: create_employee → create_employment(employee_id, start_date)
         """
         return _service(ctx).create_employment(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def set_employment_details(ctx: RunContext[Any], payload: SetEmploymentDetailsInput) -> dict[str, Any]:
+        """Set employment details (salary, percentage, occupation code) on an existing employment record.
+
+        WHEN TO USE: After create_employment, when the task specifies salary, employment percentage,
+        employment form (fast/midlertidig), or STYRK occupation code.
+        REQUIRED: employment_id (from create_employment result), date (effective date, usually same as start date).
+
+        FIELD MAPPING from prompts:
+        - "stillingsprosent" / "percentage" / "porcentaje" → percentage_of_full_time_equivalent (e.g. 80.0)
+        - "årslønn" / "annual salary" / "salaire annuel" → annual_salary
+        - "timelønn" / "hourly wage" → hourly_wage
+        - "fast stilling" / "permanent" → employment_form="PERMANENT"
+        - "midlertidig" / "temporary" → employment_form="TEMPORARY"
+        - STYRK code (e.g. "4110") → occupation_code (auto-looked up)
+        - "arbeidstidsordning" / "skiftarbeid" → working_hours_scheme
+
+        FLOW: create_employee → create_employment → set_employment_details
+        Do NOT use tripletex_post for this — this tool handles the correct field names.
+        """
+        return _service(ctx).set_employment_details(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def set_standard_time(ctx: RunContext[Any], payload: SetStandardTimeInput) -> dict[str, Any]:
+        """Set standard working hours per day for an employee.
+
+        WHEN TO USE: When the task specifies working hours (arbeidstid, timer per dag, heures par jour).
+        REQUIRED: employee_id, from_date (YYYY-MM-DD), hours_per_day.
+
+        Common values: 7.5 (standard Norwegian full-time), 6.0, 8.0.
+        FLOW: create_employee → create_employment → set_employment_details → set_standard_time
+        """
+        return _service(ctx).set_standard_time(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def create_project_activity(ctx: RunContext[Any], payload: CreateProjectActivityInput) -> dict[str, Any]:
+        """Create a project-specific activity for an existing project.
+
+        WHEN TO USE: When the task asks to create an activity for a project, or when you need
+        a custom activity on a project (beyond the default ones).
+        REQUIRED: project_id, activity_name.
+
+        The activity is created as a PROJECT_SPECIFIC_ACTIVITY type and automatically linked to the project.
+        Do NOT use tripletex_post for /project/projectActivity — this tool handles the correct schema.
+        """
+        return _service(ctx).create_project_activity(payload)
+
+    @agent.tool(retries=1)
+    @log_tool
+    def get_account_balances(ctx: RunContext[Any], payload: GetAccountBalancesInput) -> dict[str, Any]:
+        """Get posting sums (balances) per account for a date range.
+
+        WHEN TO USE: For cost analysis, year-end closing, or any task that needs to compare
+        account totals across periods.
+        REQUIRED: date_from, date_to (both YYYY-MM-DD).
+        Optional: account_number_from, account_number_to to filter by account range.
+
+        Returns a list of {account: {id, number, name}, sumAmount, currency} entries.
+        Use two calls with different date ranges to compare periods (e.g. Jan vs Feb).
+
+        TYPICAL FLOW for cost analysis:
+        1. get_account_balances(date_from="2026-01-01", date_to="2026-01-31", account_number_from=4000, account_number_to=8999)
+        2. get_account_balances(date_from="2026-02-01", date_to="2026-02-28", account_number_from=4000, account_number_to=8999)
+        3. Compare sumAmount per account to find largest increases.
+        """
+        return _service(ctx).get_account_balances(payload)
 
     @agent.tool(retries=1)
     @log_tool

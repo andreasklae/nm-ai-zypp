@@ -20,7 +20,7 @@ def test_predictor_uses_hierarchical_empirical_signal_and_floor() -> None:
     inland_cell = predictions.seeds[0].prediction[10][12]
     barren_cell = predictions.seeds[0].prediction[17][17]
 
-    assert observed_cell[3] > observed_cell[1]
+    assert observed_cell[3] + observed_cell[0] > observed_cell[1]  # death outcomes (ruin+empty) > settlement for a cell observed as ruin
     assert len({round(value, 4) for value in neighbor_cell}) > 2
     assert ocean_cell[0] == max(ocean_cell)
     assert mountain_cell[5] == max(mountain_cell)

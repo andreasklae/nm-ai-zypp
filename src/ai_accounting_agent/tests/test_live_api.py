@@ -61,7 +61,9 @@ def _verification_client() -> TripletexClient:
     )
 
 
-def _list_values(client: TripletexClient, path: str, *, fields: str, count: int = 200, **params: object) -> list[dict[str, object]]:
+def _list_values(
+    client: TripletexClient, path: str, *, fields: str, count: int = 200, **params: object
+) -> list[dict[str, object]]:
     payload = client.get(path, params={"fields": fields, "count": count, **params})
     if isinstance(payload, dict) and "values" in payload:
         return payload["values"]
@@ -79,7 +81,9 @@ def _find_match(items: list[dict[str, object]], key: str, expected: str) -> bool
     return False
 
 
-def _outcome_checks(scenario: ScenarioSpec, token: str, observed_summary: dict[str, object]) -> dict[str, dict[str, object]]:
+def _outcome_checks(
+    scenario: ScenarioSpec, token: str, observed_summary: dict[str, object]
+) -> dict[str, dict[str, object]]:
     client = _verification_client()
     checks: dict[str, dict[str, object]] = {}
 
@@ -160,16 +164,16 @@ def _outcome_checks(scenario: ScenarioSpec, token: str, observed_summary: dict[s
         )
         add(
             "project_billing_tools_present",
-            all(
-                tool in tool_sequence
-                for tool in ("configure_project_billing", "create_order", "create_invoice")
-            ),
+            all(tool in tool_sequence for tool in ("configure_project_billing", "create_order", "create_invoice")),
             f"tool_sequence={tool_sequence}",
         )
     elif scenario.scenario_id == "order_invoice_flow":
         add(
             "invoice_tools_present",
-            all(tool in tool_sequence for tool in ("create_customer", "create_product", "create_order", "create_invoice")),
+            all(
+                tool in tool_sequence
+                for tool in ("create_customer", "create_product", "create_order", "create_invoice")
+            ),
             f"tool_sequence={tool_sequence}",
         )
     elif scenario.scenario_id == "invoice_payment_flow":

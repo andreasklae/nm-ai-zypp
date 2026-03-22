@@ -1,0 +1,13 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile'
+      - '-t'
+      - 'europe-west4-docker.pkg.dev/ai-nm26osl-1850/ai-accounting-agent/ai-accounting-agent:latest'
+      - '.'
+images:
+  - 'europe-west4-docker.pkg.dev/ai-nm26osl-1850/ai-accounting-agent/ai-accounting-agent:latest'
+options:
+  logging: CLOUD_LOGGING_ONLY

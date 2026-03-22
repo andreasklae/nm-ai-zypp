@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-03-21T20:40:08.734679+00:00",
+  "scenario_id": "timesheet_entry_flow",
+  "trace_token": "f5b120984f",
+  "request": {
+    "prompt": "Opprett et prosjekt Eval Timesheet Project f5b120984f, finn en gyldig aktivitet, og f\u00f8r 2,5 timer i dag med kommentaren Eval timesheet f5b120984f. trace_token=f5b120984f",
+    "files": [],
+    "tripletex_credentials": {
+      "base_url": "https://kkpqfuj-amager.tripletex.dev/v2",
+      "session_token": "[redacted]"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-cloud-trace-context": "ec913e28e8987b052094bd1e50815563;o=1",
+      "date": "Sat, 21 Mar 2026 20:39:53 GMT",
+      "server": "Google Frontend",
+      "Content-Length": "22",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    },
+    "body": {
+      "status": "completed"
+    }
+  }
+}

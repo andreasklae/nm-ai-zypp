@@ -30,7 +30,6 @@ from ai_accounting_agent.schemas import (
 from ai_accounting_agent.tripletex_client import TripletexClient
 from ai_accounting_agent.tripletex_tools import ReferenceIndex, StepState, TripletexService
 
-
 DEFAULT_ENV_PATH = Path("src/ai_accounting_agent/.env")
 
 
@@ -91,9 +90,7 @@ def test_live_create_customer_and_product_tools() -> None:
     customer = service.create_customer(
         CreateCustomerInput(name=_unique("Kunde"), email=f"{uuid4().hex[:8]}@example.org")
     )
-    product = service.create_product(
-        CreateProductInput(name=_unique("Produkt"), price_excluding_vat_currency=1000.0)
-    )
+    product = service.create_product(CreateProductInput(name=_unique("Produkt"), price_excluding_vat_currency=1000.0))
 
     assert customer["id"]
     assert product["id"]

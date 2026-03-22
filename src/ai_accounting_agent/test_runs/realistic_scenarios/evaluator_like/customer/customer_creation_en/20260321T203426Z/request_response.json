@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-03-21T20:34:26.620514+00:00",
+  "scenario_id": "customer_creation_en",
+  "trace_token": "0096f97903",
+  "request": {
+    "prompt": "Create a customer named Eval Customer 0096f97903 with email eval-customer-0096f97903@example.org. Do only what is necessary. trace_token=0096f97903",
+    "files": [],
+    "tripletex_credentials": {
+      "base_url": "https://kkpqfuj-amager.tripletex.dev/v2",
+      "session_token": "[redacted]"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-cloud-trace-context": "e535fe2aab098f66f80108c274d4f01e;o=1",
+      "date": "Sat, 21 Mar 2026 20:34:05 GMT",
+      "server": "Google Frontend",
+      "Content-Length": "22",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    },
+    "body": {
+      "status": "completed"
+    }
+  }
+}

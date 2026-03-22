@@ -1,0 +1,173 @@
+{
+  "scenario_id": "order_invoice_flow",
+  "trace_token": "7c0de8c23e",
+  "run_id": "fe1c16d3079c47e6b996d02872396180",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tool_call",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "get_today_date",
+    "create_customer",
+    "create_product",
+    "create_order",
+    "create_invoice"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_today_date",
+            "create_customer",
+            "create_product",
+            "create_order",
+            "create_invoice"
+          ],
+          "success_criteria": "Customer, product, order, and invoice are created without payment registration.",
+          "task_understanding": "User wants to create a specific customer and product, then create an order with them, and finally invoice it. No payment registration."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_customer",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "address_line1": null,
+            "city": null,
+            "email": null,
+            "invoice_send_method": null,
+            "invoices_due_in": null,
+            "invoices_due_in_type": null,
+            "name": "Eval Invoice Customer 7c0de8c23e",
+            "organization_number": null,
+            "postal_code": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_product",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "name": "Eval Invoice Product 7c0de8c23e",
+            "number": null,
+            "price_excluding_vat_currency": 1000,
+            "vat_type_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_order",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108419254,
+            "delivery_date": "2026-03-21",
+            "order_date": "2026-03-21",
+            "order_lines": [
+              {
+                "count": 1,
+                "description": null,
+                "product_id": 84420032,
+                "unit_price_excluding_vat_currency": null
+              }
+            ],
+            "project_id": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_invoice",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108419254,
+            "invoice_date": "2026-03-21",
+            "invoice_due_date": "2026-04-04",
+            "order_ids": [
+              402035163
+            ],
+            "send_to_customer": false
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 7,
+  "tripletex_write_count": 4,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "invoice_tools_present": {
+      "passed": true,
+      "details": "tool_sequence=['announce_step', 'get_today_date', 'create_customer', 'create_product', 'create_order', 'create_invoice']"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "created_at": "2026-03-21T20:36:54.980934+00:00",
+  "scenario_id": "fixed_price_project_billing_pt",
+  "trace_token": "1c5e6f0957",
+  "request": {
+    "prompt": "Crie um cliente Eval Billing Customer 1c5e6f0957, crie um projeto chamado Seguran\u00e7a de dados 1c5e6f0957, defina um pre\u00e7o fixo de 122800 NOK nesse projeto e fature 75 % do pre\u00e7o fixo como pagamento por etapa. N\u00e3o registre pagamento. trace_token=1c5e6f0957",
+    "files": [],
+    "tripletex_credentials": {
+      "base_url": "https://kkpqfuj-amager.tripletex.dev/v2",
+      "session_token": "[redacted]"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "x-cloud-trace-context": "c9f07dfd99d8277db535331d9d47e0d5;o=1",
+      "date": "Sat, 21 Mar 2026 20:36:40 GMT",
+      "server": "Google Frontend",
+      "Content-Length": "22",
+      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+    },
+    "body": {
+      "status": "completed"
+    }
+  }
+}

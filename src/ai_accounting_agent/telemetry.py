@@ -61,7 +61,7 @@ def _redact_string(value: str, key: str | None = None) -> str:
     lowered = value.lower()
     if lowered.startswith("basic ") or lowered.startswith("bearer "):
         return REDACTED
-    return preview_text(value)
+    return value
 
 
 def serialize_for_logging(value: Any, *, key: str | None = None) -> Any:
@@ -158,9 +158,7 @@ def get_logger() -> logging.Logger:
 
     if not logger.handlers:
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] [%(name)s] %(message)s")
-        )
+        stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] [%(name)s] %(message)s"))
         logger.addHandler(stream_handler)
 
     if CloudLoggingHandler is not None:

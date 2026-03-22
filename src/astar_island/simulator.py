@@ -48,6 +48,26 @@ def _smooth_probs(counts: list[float], *, alpha: float = 1.5) -> list[float]:
     return [x / total for x in adjusted]
 
 
+_OBS_DENSITY_BOOST_THRESHOLD = 0.25  # only boost when observed settlement fraction exceeds this
+
+
+def _compute_obs_sett_density(observations: ObservationCollection | None) -> float:
+    """Return fraction of non-ocean, non-mountain observed cells that are settlement or port."""
+    if not observations or not observations.samples:
+        return 0.0
+    sett = 0
+    non_static = 0
+    for s in observations.samples:
+        for row in s.result.grid:
+            for v in row:
+                if v in OCEAN_CODES or v in MOUNTAIN_CODES:
+                    continue
+                non_static += 1
+                if v in INITIAL_OCCUPIED_CODES:
+                    sett += 1
+    return sett / non_static if non_static > 0 else 0.0
+
+
 def _terrain_bucket(code: int) -> str:
     if code in OCEAN_CODES:
         return "ocean"
@@ -238,7 +258,7 @@ def estimate_parameters(
         exp_p = 0.35 * emp_exp + 0.65 * exp_p
 
     return SimulationParameters(
-        settlement_survival_rate=max(0.08, min(0.94, p_survive)),
+        settlement_survival_rate=max(0.04, min(0.94, p_survive)),
         settlement_death_class_distribution=death_dist,
         vacant_frontier_class_distribution=vf,
         vacant_interior_class_distribution=vi,
@@ -284,7 +304,7 @@ def expected_cell_distribution(
     if code in INITIAL_OCCUPIED_CODES:
         p_surv = params.settlement_survival_rate * (0.75 + 0.50 * support)
         p_surv *= 1.0 - 0.25 * params.winter_severity_anchor * (0.5 - support)
-        p_surv = max(0.06, min(0.96, p_surv))
+        p_surv = max(0.03, min(0.96, p_surv))
 
         dist_out = [0.0] * 6
         if coastal and code == 1:
@@ -624,14 +644,14 @@ def _terrain_name_for_cal(code: int) -> str:
 class SimulatorPredictor:
     """Monte Carlo terrain predictor; use for final submission after observations."""
 
-    model_name: str = "analytic-simulator-v3"
+    model_name: str = "analytic-simulator-v4"
     floor: float = 1e-6
     legal_floor: float = 0.003
     n_runs: int = 1000
     seed: int = 42
-    calibration_weight: float = 0.2
+    calibration_weight: float = 0.35
     use_transition_policy: bool = True
-    transition_blend: float = 0.40
+    transition_blend: float = 0.55
     last_simulation_parameters: SimulationParameters | None = field(default=None, init=False, repr=False)
 
     def predict(
@@ -659,6 +679,7 @@ class SimulatorPredictor:
         params = estimate_parameters(round_detail, observations, feature_grids, latent_proxies)
         self.last_simulation_parameters = params
         observed_counts = _build_observed_count_index(round_detail, observations)
+        obs_sett_density = _compute_obs_sett_density(observations)
 
         seeds: list[SeedPrediction] = []
         tensors: list[list[list[list[float]]]] = []
@@ -674,6 +695,35 @@ class SimulatorPredictor:
                     code = state.grid[y][x]
                     # Get analytic expected distribution instead of running Monte Carlo
                     expected_dist = expected_cell_distribution(code, x=x, y=y, features=fg, params=params)
+
+                    # Observed-density boost: in high-expansion rounds, frontier non-occupied
+                    # cells get a settlement probability uplift proportional to how much higher
+                    # the observed density is than the threshold.
+                    if (
+                        obs_sett_density > _OBS_DENSITY_BOOST_THRESHOLD
+                        and code not in INITIAL_OCCUPIED_CODES
+                        and code not in OCEAN_CODES
+                        and code not in MOUNTAIN_CODES
+                    ):
+                        front_val = fg.frontier[y][x]
+                        dist_val = fg.distance[y][x]
+                        if front_val > 0 and dist_val <= 4:
+                            coastal = fg.coastal[y][x]
+                            obs_blend = (obs_sett_density - _OBS_DENSITY_BOOST_THRESHOLD) * 0.60
+                            current_sett = expected_dist[1] + expected_dist[2]
+                            target_sett = min(0.65, current_sett + obs_blend)
+                            delta = target_sett - current_sett
+                            if delta > 1e-6:
+                                new_d = list(expected_dist)
+                                new_d[1] += delta * (0.92 if not coastal else 0.80)
+                                new_d[2] += delta * (0.08 if coastal else 0.0)
+                                if not coastal:
+                                    new_d[1] += new_d[2]
+                                    new_d[2] = 0.0
+                                new_d[0] = max(1e-6, expected_dist[0] - delta)
+                                s = sum(new_d)
+                                expected_dist = [v / s for v in new_d]
+
                     mc_dist = _apply_hard_constraints(
                         state, expected_dist, x=x, y=y, features=fg, floor=self.legal_floor
                     )

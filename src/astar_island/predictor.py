@@ -456,76 +456,82 @@ class BaselinePredictor:
             return normalize_distribution([0.0, 0.0, 0.0, 0.0, 0.0, 1.0], floor=self.floor)
         if code in OCEAN_CODES:
             return normalize_distribution([1.0, 0.0, 0.0, 0.0, 0.0, 0.0], floor=self.floor)
+        # GT calibrated: port → [0.48, 0.10, 0.15, 0.02, 0.24, 0.00]
         if code == 2:
             return normalize_distribution(
                 [
-                    0.08 + winter * 0.06,
-                    0.18 + support * 0.10 + trade * 0.08,
-                    0.46 + trade * 0.18 + water_score * 0.10,
-                    0.14 + winter * 0.18 + conflict * 0.10,
-                    0.10 + rebuild * 0.08,
+                    0.42 + winter * 0.08,
+                    0.08 + support * 0.06 + trade * 0.04,
+                    0.12 + trade * 0.08 + water_score * 0.06,
+                    0.02 + winter * 0.02,
+                    0.20 + forest_score * 0.06 + rebuild * 0.04,
                     0.0,
                 ],
                 floor=self.floor,
             )
+        # GT calibrated: settlement → [0.42, 0.34, 0.005, 0.03, 0.21, 0.00]
         if code == 1:
             return normalize_distribution(
                 [
-                    0.18 + winter * 0.10,
-                    0.28 + support * 0.18 + density * 0.06 + trade * 0.03,
-                    0.00 + (0.10 if coastal else 0.0) + trade * (0.08 if coastal else 0.01),
-                    0.20 + winter * 0.18 + conflict * 0.12,
-                    0.18 + rebuild * 0.12 + forest_score * 0.04,
+                    0.38 + winter * 0.08,
+                    0.28 + support * 0.12 + density * 0.04 + trade * 0.02,
+                    0.00 + (0.02 if coastal else 0.0) + trade * (0.02 if coastal else 0.0),
+                    0.02 + winter * 0.02 + conflict * 0.02,
+                    0.18 + forest_score * 0.06 + rebuild * 0.04,
                     0.0,
                 ],
                 floor=self.floor,
             )
+        # GT calibrated: ruin distributions vary, but keep structural prior
         if code == 3:
             return normalize_distribution(
                 [
-                    0.20 + winter * 0.06,
-                    0.10 + support * 0.16 + rebuild * 0.24,
+                    0.22 + winter * 0.04,
+                    0.10 + support * 0.14 + rebuild * 0.18,
                     0.00
-                    + (0.10 if coastal else 0.0)
-                    + rebuild * (0.12 if coastal else 0.02)
-                    + trade * (0.08 if coastal else 0.0),
-                    0.22 + conflict * 0.12 + winter * 0.10,
-                    0.26 + forest_score * 0.18 + rebuild * 0.08 + forest_adj * 0.06,
+                    + (0.08 if coastal else 0.0)
+                    + rebuild * (0.08 if coastal else 0.01)
+                    + trade * (0.06 if coastal else 0.0),
+                    0.20 + conflict * 0.06 + winter * 0.04,
+                    0.28 + forest_score * 0.14 + rebuild * 0.06 + forest_adj * 0.06,
                     0.0,
                 ],
                 floor=self.floor,
             )
+        # GT calibrated: forest → [0.09, 0.17, 0.01, 0.02, 0.71, 0.00]
         if code in FOREST_CODES:
             return normalize_distribution(
                 [
-                    0.20 + (1.0 - support) * 0.08 + winter * 0.03,
-                    0.02 + support * 0.05 + distance * 0.03,
-                    0.00 + (0.02 if coastal else 0.0) + trade * 0.02,
-                    0.03 + conflict * 0.04,
-                    0.73 + forest_score * 0.16 + forest_adj * 0.08 + rebuild * 0.04,
+                    0.07 + (1.0 - support) * 0.04 + winter * 0.01,
+                    0.10 + support * 0.12 + frontier * 0.08 + distance * 0.04,
+                    0.00 + (0.03 if coastal else 0.0) + trade * 0.02,
+                    0.01 + conflict * 0.01,
+                    0.72 + forest_score * 0.10 + forest_adj * 0.06,
                     0.0,
                 ],
                 floor=self.floor,
             )
+        # GT calibrated: plains/empty → [0.77, 0.17, 0.01, 0.02, 0.04, 0.00]
         if code in EMPTY_CODES:
             return normalize_distribution(
                 [
-                    0.70 + barren * 0.18 + winter * 0.04 + mountain_penalty * 0.08,
-                    0.05 + support * 0.20 + forest_score * 0.06 + water_score * 0.08 + density * 0.04 + distance * 0.04,
-                    0.00 + (0.12 if coastal else 0.0) + trade * 0.10 + water_score * (0.05 if coastal else 0.0),
-                    0.04 + winter * 0.12 + conflict * 0.10 + frontier * 0.04,
-                    0.01 + forest_score * 0.16 + rebuild * 0.08 + forest_adj * 0.04,
+                    0.78 + barren * 0.10 + mountain_penalty * 0.06,
+                    0.08 + support * 0.16 + forest_score * 0.04 + water_score * 0.06 + density * 0.03 + distance * 0.03,
+                    0.00 + (0.04 if coastal else 0.0) + trade * 0.04 + water_score * (0.03 if coastal else 0.0),
+                    0.01 + winter * 0.02 + conflict * 0.01,
+                    0.02 + forest_score * 0.06 + forest_adj * 0.03,
                     0.0,
                 ],
                 floor=self.floor,
             )
+        # Generic fallback (should rarely be hit)
         return normalize_distribution(
             [
-                0.64 + barren * 0.10,
-                0.10 + support * 0.14,
-                0.00 + (0.06 if coastal else 0.0),
-                0.08 + winter * 0.06 + conflict * 0.06,
-                0.06 + forest_score * 0.08,
+                0.76 + barren * 0.06,
+                0.08 + support * 0.10,
+                0.00 + (0.03 if coastal else 0.0),
+                0.01 + winter * 0.01,
+                0.04 + forest_score * 0.06,
                 0.0,
             ],
             floor=self.floor,
@@ -1318,11 +1324,13 @@ def _derive_latent_proxies(
     legacy_trade_proxy_mode: bool = False,
 ) -> LatentProxySummary:
     if observations is None or not observations.samples:
+        # GT-calibrated defaults (averaged across 4 scored rounds):
+        # survival=0.335, expansion=0.190, port=0.063, ruin=0.016
         return LatentProxySummary(
-            settlement_survival=0.50,
-            ruin_intensity=0.18,
-            port_prevalence=0.16,
-            expansion_pressure=0.14,
+            settlement_survival=0.34,
+            ruin_intensity=0.02,
+            port_prevalence=0.06,
+            expansion_pressure=0.15,
             reclamation_rate=0.12,
             winter_severity=0.52,
             trade_strength=0.35,
@@ -1388,10 +1396,11 @@ def _derive_latent_proxies(
         else (mean_wealth * 0.55 + mean_tech * 0.45)
     )
 
-    settlement_survival = _safe_ratio(occupied_alive, occupied_total, default=0.50)
-    ruin_intensity = _safe_ratio(ruin_hits, ruin_total, default=0.18)
-    port_prevalence = _safe_ratio(coastal_ports, coastal_dynamic_total, default=0.16)
-    expansion_pressure = _safe_ratio(expansion_hits, expansion_total, default=0.14)
+    # GT-calibrated defaults from empirical averages across scored rounds
+    settlement_survival = _safe_ratio(occupied_alive, occupied_total, default=0.34)
+    ruin_intensity = _safe_ratio(ruin_hits, ruin_total, default=0.02)
+    port_prevalence = _safe_ratio(coastal_ports, coastal_dynamic_total, default=0.06)
+    expansion_pressure = _safe_ratio(expansion_hits, expansion_total, default=0.19)
     reclamation_rate = _safe_ratio(reclamation_hits, reclamation_total, default=0.12)
 
     winter_severity = max(
@@ -1506,7 +1515,12 @@ def _adj_forest_fallback(grid: list[list[int]], x: int, y: int) -> int:
 def _safe_ratio(numerator: int, denominator: int, *, default: float) -> float:
     if denominator <= 0:
         return default
-    return max(0.01, min(0.99, numerator / denominator))
+    # Bayesian shrinkage: blend empirical rate with default prior
+    # Pseudo-count of 8 means ~8 observations needed to overcome the prior
+    pseudo_count = 8
+    empirical = numerator / denominator
+    shrunk = (numerator + pseudo_count * default) / (denominator + pseudo_count)
+    return max(0.01, min(0.99, shrunk))
 
 
 def _blank_grid(state: SeedInitialState, *, fill: float = 0.0) -> FloatGrid:
@@ -1782,15 +1796,17 @@ def _apply_latent_proxy_shift(
                     0.60 + proxies.trade_strength * (1.35 if coastal else 0.15) + proxies.port_prevalence * 0.60,
                     strength,
                 )
+                # GT calibrated: ruin is rare for settlements (3.1%), reduce multiplier
                 current[3] *= _scaled_multiplier(
-                    0.64 + proxies.ruin_intensity * 1.55 + proxies.winter_severity * 0.45,
+                    0.30 + proxies.ruin_intensity * 0.40 + proxies.winter_severity * 0.15,
                     strength,
                 )
             if frontier:
                 current[1] *= _scaled_multiplier(0.72 + proxies.expansion_pressure * 2.40, strength)
                 current[2] *= _scaled_multiplier(0.80 + proxies.trade_strength * (0.90 if coastal else 0.15), strength)
+                # GT calibrated: ruin is rare at frontier (1.6%), suppress
                 current[3] *= _scaled_multiplier(
-                    0.72 + proxies.conflict_pressure * 0.95 + proxies.ruin_intensity * 0.65,
+                    0.35 + proxies.conflict_pressure * 0.25 + proxies.ruin_intensity * 0.15,
                     strength,
                 )
             if code in FOREST_CODES or code == 3:
@@ -1805,7 +1821,8 @@ def _apply_latent_proxy_shift(
                 current[2] *= _scaled_multiplier(
                     0.82 + proxies.port_prevalence * 0.80 + proxies.trade_strength * 0.70, strength
                 )
-            current[3] *= _scaled_multiplier(0.84 + proxies.winter_severity * 0.38, strength)
+            # GT calibrated: suppress ruin globally
+            current[3] *= _scaled_multiplier(0.45 + proxies.winter_severity * 0.15, strength)
             output_row.append(normalize_distribution(current, floor=floor))
         adjusted.append(output_row)
     return adjusted
@@ -1840,16 +1857,19 @@ def _apply_local_influence_maps(
             current[2] *= (
                 0.55 + trade * (1.25 if coastal else 0.12) + rebuild * (0.55 if code == 3 and coastal else 0.05)
             )
-            current[3] *= 0.74 + winter * 0.90 + conflict * 0.86 + proxies.conflict_pressure * 0.14
+            # GT calibrated: ruin is rare (1.6-3.1%), suppress rather than amplify
+            current[3] *= 0.40 + winter * 0.25 + conflict * 0.20 + proxies.conflict_pressure * 0.08
             current[4] *= 0.78 + rebuild * (0.85 if code == 3 else 0.25) + (0.35 if code in FOREST_CODES else 0.0)
             if code in FOREST_CODES:
+                # GT: 17.4% of forests become settlements — boost colonization
                 expansion = proxies.expansion_pressure if proxies else 0.14
-                current[1] *= 0.40 + support * 0.15 + expansion * 0.55
-                current[2] *= 0.18 if coastal else 0.05
-                current[4] *= 1.45 - expansion * 0.45
+                current[1] *= 0.70 + support * 0.35 + expansion * 0.80
+                current[2] *= 0.25 if coastal else 0.06
+                current[4] *= 1.20 - expansion * 0.25
             if code in INITIAL_OCCUPIED_CODES:
                 current[1] *= 1.00 + trade * 0.16 + support * 0.12
-                current[3] *= 0.90 + winter * 0.28
+                # GT: settlement→ruin is only 3.1%, suppress ruin for settlements
+                current[3] *= 0.30 + winter * 0.10
             output_row.append(normalize_distribution(current, floor=floor))
         output.append(output_row)
     return output
@@ -1898,20 +1918,26 @@ def _apply_transition_policy_to_cell(
             current[4] *= 0.15 + forest_support * 0.95 + forest_unlock * 0.40
             current[1] *= 0.82 + support * 0.40 + expansion * 0.40
             current[0] *= 0.96 + (1.0 - support) * 0.10
+        # GT: plains→ruin is only 1.6%, suppress
+        current[3] *= 0.25
 
     if code in FOREST_CODES:
-        settle_base = 0.28 if aggressive else 0.38
-        settle_support_scale = 0.20 if aggressive else 0.24
-        forest_stay_mult = 1.65 if aggressive else 1.38
-        empty_mult = 1.10 if aggressive else 1.08
+        # GT: 17.4% of forests become settlements — boost colonization
+        settle_base = 0.55 if aggressive else 0.65
+        settle_support_scale = 0.30 if aggressive else 0.35
+        forest_stay_mult = 1.30 if aggressive else 1.15
+        empty_mult = 0.85 if aggressive else 0.90
         current[1] *= settle_base + support * settle_support_scale + expansion * 0.80
-        current[2] *= 0.10 if coastal else 0.0
-        current[4] *= forest_stay_mult - expansion * 0.55
+        current[2] *= 0.12 if coastal else 0.0
+        current[4] *= forest_stay_mult - expansion * 0.35
         current[0] *= empty_mult
+        # GT: forest→ruin is only 1.7%
+        current[3] *= 0.30
 
     if code in INITIAL_OCCUPIED_CODES:
         current[4] *= (0.38 + rebuild * 0.28) if aggressive else (0.52 + rebuild * 0.24)
-        current[3] *= 0.92 + winter * 0.30 + conflict * 0.22
+        # GT: settlement→ruin is only 3.1%, strongly suppress ruin
+        current[3] *= 0.30 + winter * 0.08 + conflict * 0.06
 
     if code == 3:
         f_adj = features.adj_forest[y][x] if features else _adj_forest_fallback(state.grid, x, y)

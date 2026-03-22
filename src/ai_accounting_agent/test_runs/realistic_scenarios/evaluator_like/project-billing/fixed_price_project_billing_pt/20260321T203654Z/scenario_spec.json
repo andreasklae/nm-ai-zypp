@@ -1,0 +1,40 @@
+{
+  "scenario_id": "fixed_price_project_billing_pt",
+  "category": "project_billing",
+  "prompt_template": "Crie um cliente Eval Billing Customer {token}, crie um projeto chamado Seguran\u00e7a de dados {token}, defina um pre\u00e7o fixo de 122800 NOK nesse projeto e fature 75 % do pre\u00e7o fixo como pagamento por etapa. N\u00e3o registre pagamento. trace_token={token}",
+  "expected_behavior": [
+    "The model should complete a fixed-price project billing flow without probing unsafe collection endpoints.",
+    "The project should be configured for fixed-price billing before the milestone invoice is created."
+  ],
+  "success_criteria": [
+    "Customer creation, project creation, project billing configuration, order creation, and invoice creation appear in the logs.",
+    "No avoidable 4xx responses are logged.",
+    "The Portuguese prompt is handled correctly end to end."
+  ],
+  "score_focus": [
+    "Correct fixed-price project configuration.",
+    "Safe milestone billing flow without generic schema-probing detours.",
+    "Low-error execution."
+  ],
+  "expected_tools": [
+    "create_customer",
+    "create_project",
+    "configure_project_billing",
+    "create_order",
+    "create_invoice"
+  ],
+  "forbidden_tools": [
+    "register_invoice_payment"
+  ],
+  "attachment_filenames": [],
+  "expect_tripletex_write": true,
+  "max_tolerated_4xx": 0,
+  "expect_provider_thoughts": true,
+  "expected_log_events": [
+    "request_received",
+    "agent_messages",
+    "task_complete"
+  ],
+  "trace_token": "1c5e6f0957",
+  "attachment_manifest": []
+}

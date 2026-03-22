@@ -1,0 +1,345 @@
+{
+  "scenario_id": "voucher_reversal_flow",
+  "trace_token": "87d9911c06",
+  "run_id": "189cbad51beb4ceb99931ca4b98254e4",
+  "response_status_code": 200,
+  "response_body": {
+    "status": "completed"
+  },
+  "event_sequence": [
+    "request_received",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "find_api_subagent_result",
+    "tool_result",
+    "tool_call",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tool_result",
+    "agent_step",
+    "tool_result",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "tool_call",
+    "tripletex_http_request",
+    "agent_messages",
+    "attachment_extraction_status",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_call",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tripletex_http_request",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tripletex_http_response",
+    "tool_result",
+    "tool_result",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "agent_step",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tool_call",
+    "tool_call",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "agent_step",
+    "tripletex_http_request",
+    "tool_result",
+    "tripletex_http_response",
+    "tool_result",
+    "tripletex_http_response",
+    "tripletex_http_request",
+    "tripletex_http_response",
+    "tool_result",
+    "agent_messages",
+    "task_complete",
+    "run.googleapis.com%2Fstdout",
+    "request_received"
+  ],
+  "tool_sequence": [
+    "announce_step",
+    "announce_step",
+    "get_today_date",
+    "search_tripletex_reference",
+    "create_order",
+    "get_reference_data",
+    "create_supplier",
+    "get_reference_data",
+    "create_invoice",
+    "create_voucher",
+    "announce_step",
+    "announce_step",
+    "reverse_voucher"
+  ],
+  "tool_argument_summary": [
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [],
+          "success_criteria": "Employee is fully configured with all contract details, including ID numbers and bank details via PUT request.",
+          "task_understanding": "Verification of all requested details, including national ID and bank number."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "get_today_date",
+            "search_tripletex_reference"
+          ],
+          "success_criteria": "Date obtained, reversal endpoint found.",
+          "task_understanding": "Need to create a supplier, book a simple balanced voucher with a specific description, and then reverse the voucher using today's date."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_today_date",
+      "arguments": {
+        "kwargs": {},
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "search_tripletex_reference",
+      "arguments": {
+        "kwargs": {
+          "max_results": 5,
+          "query": "reverse voucher"
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_order",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108326466,
+            "delivery_date": "2026-03-21",
+            "order_date": "2026-03-21",
+            "order_lines": [
+              {
+                "count": 30,
+                "description": null,
+                "product_id": 84420054,
+                "unit_price_excluding_vat_currency": 850
+              }
+            ],
+            "project_id": 402035231
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {
+              "number": 2400
+            },
+            "reference": "accounts"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_supplier",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "email": null,
+            "invoice_email": null,
+            "name": "Eval Reverse Supplier 87d9911c06",
+            "organization_number": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "get_reference_data",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "filters": {
+              "number": 6540
+            },
+            "reference": "accounts"
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_invoice",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "customer_id": 108326466,
+            "invoice_date": "2026-03-21",
+            "invoice_due_date": "2026-04-04",
+            "order_ids": [
+              402035345
+            ],
+            "send_to_customer": false
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "create_voucher",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date": "2026-03-21",
+            "description": "Eval Reverse Voucher 87d9911c06",
+            "postings": [
+              {
+                "account_id": 424227633,
+                "amount_gross": 1000,
+                "amount_gross_currency": null,
+                "customer_id": null,
+                "date": "2026-03-21",
+                "description": "Expense",
+                "employee_id": null,
+                "free_accounting_dimension_1_id": null,
+                "free_accounting_dimension_2_id": null,
+                "free_accounting_dimension_3_id": null,
+                "project_id": null,
+                "row": 1,
+                "supplier_id": null,
+                "vat_type_id": null
+              },
+              {
+                "account_id": 424227422,
+                "amount_gross": -1000,
+                "amount_gross_currency": null,
+                "customer_id": null,
+                "date": "2026-03-21",
+                "description": "Supplier liability",
+                "employee_id": null,
+                "free_accounting_dimension_1_id": null,
+                "free_accounting_dimension_2_id": null,
+                "free_accounting_dimension_3_id": null,
+                "project_id": null,
+                "row": 2,
+                "supplier_id": 108419929,
+                "vat_type_id": null
+              }
+            ],
+            "send_to_ledger": true,
+            "vendor_invoice_number": null
+          }
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "create_voucher"
+          ],
+          "success_criteria": "Voucher created successfully and ID obtained for reversal.",
+          "task_understanding": "Need to book a simple balanced voucher."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "announce_step",
+      "arguments": {
+        "kwargs": {
+          "planned_tools": [
+            "reverse_voucher"
+          ],
+          "success_criteria": "Voucher reversed successfully.",
+          "task_understanding": "Need to reverse the newly created voucher."
+        },
+        "positional_args": []
+      }
+    },
+    {
+      "tool": "reverse_voucher",
+      "arguments": {
+        "kwargs": {
+          "payload": {
+            "date": "2026-03-21",
+            "voucher_id": 609142224
+          }
+        },
+        "positional_args": []
+      }
+    }
+  ],
+  "tripletex_http_call_count": 18,
+  "tripletex_write_count": 8,
+  "tripletex_http_error_statuses": [],
+  "announce_step_before_tools": true,
+  "provider_thoughts_present": true,
+  "checks": {
+    "response_completed": true,
+    "required_log_events_present": true,
+    "required_tools_present": true,
+    "forbidden_tools_absent": true,
+    "announce_step_before_tools": true,
+    "provider_thoughts_logged": true,
+    "max_4xx_respected": true,
+    "write_expectation_matches": true
+  },
+  "all_checks_passed": true,
+  "outcome_checks": {
+    "no_tripletex_http_errors": {
+      "passed": true,
+      "details": "Observed Tripletex error statuses: []"
+    },
+    "reverse_tool_present": {
+      "passed": true,
+      "details": "tool_sequence=['announce_step', 'announce_step', 'get_today_date', 'search_tripletex_reference', 'create_order', 'get_reference_data', 'create_supplier', 'get_reference_data', 'create_invoice', 'create_voucher', 'announce_step', 'announce_step', 'reverse_voucher']"
+    }
+  }
+}

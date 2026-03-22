@@ -6,7 +6,7 @@ from ai_accounting_agent.gemini import DEFAULT_GEMINI_MODEL, build_google_model,
 def test_default_model_settings_enable_high_thinking() -> None:
     settings = default_model_settings()
 
-    assert settings["parallel_tool_calls"] is False
+    assert settings["parallel_tool_calls"] is True
     assert settings["google_thinking_config"]["include_thoughts"] is True
     assert settings["google_thinking_config"]["thinking_level"] == "HIGH"
 

@@ -1,0 +1,249 @@
+{
+  "status": "ok",
+  "project_id": "ai-nm26osl-1850",
+  "service_name": "ai-accounting-agent",
+  "seed_filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"ai-accounting-agent\" AND jsonPayload.prompt:\"trace_token=c45d569bc6\"",
+  "run_filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"ai-accounting-agent\" AND jsonPayload.run_id=\"d19c11d9418f43cb956cae08b0ace504\"",
+  "window_filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"ai-accounting-agent\" AND timestamp>=\"2026-03-21T20:34:26.789987Z\" AND timestamp<=\"2026-03-21T20:34:32.819928Z\"",
+  "run_id": "d19c11d9418f43cb956cae08b0ace504",
+  "entries": [
+    {
+      "insertId": "69bf00d3000e0ed5b85c9c4d",
+      "labels": {
+        "instanceId": "00da6cd2c45046e2e556094f1bd9477d011594b6f1c0bdcf2ed3f4dc782d0dcb4cfc7857d79ef4558d1750ab15066c5764fef28b984acc34451d28091aba5903babd82d8d40bd096d02585e134f7"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/run.googleapis.com%2Fstdout",
+      "receiveTimestamp": "2026-03-21T20:34:27.927827434Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "textPayload": "INFO:     169.254.169.126:1440 - \"POST /solve HTTP/1.1\" 200 OK",
+      "timestamp": "2026-03-21T20:34:27.921301Z"
+    },
+    {
+      "insertId": "kb1zlyf94w8m2",
+      "jsonPayload": {
+        "agent_message_count": 1,
+        "agent_output": "Task attempt ended after exhausting recovery: status_code: 400, model_name: gemini-3.1-pro-preview, body: {'error': {'code': 400, 'message': 'The document has no pages.', 'status': 'INVALID_ARGUMENT'}}",
+        "completed_with_recovery": true,
+        "duration_ms": 946,
+        "event": "task_complete",
+        "file_count": 1,
+        "files": [
+          {
+            "filename": "supplier_invoice_pdf.pdf",
+            "mime_type": "application/pdf",
+            "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+            "size_bytes": 61
+          }
+        ],
+        "model": "gemini-3.1-pro-preview",
+        "path": "/solve",
+        "prompt": "Opprett en leverand\u00f8r med navn Eval Supplier c45d569bc6 og bokf\u00f8r en leverand\u00f8rfaktura basert p\u00e5 vedlegget. Bruk c45d569bc6 i beskrivelsen p\u00e5 f\u00f8ringen eller voucheret. Ikke gj\u00f8r un\u00f8dvendige oppslag. trace_token=c45d569bc6",
+        "recovery_error_message": "status_code: 400, model_name: gemini-3.1-pro-preview, body: {'error': {'code': 400, 'message': 'The document has no pages.', 'status': 'INVALID_ARGUMENT'}}",
+        "recovery_error_type": "ModelHTTPError",
+        "run_id": "d19c11d9418f43cb956cae08b0ace504",
+        "status": 200,
+        "usage": null
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:34:27.819928880Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:34:27.819928880Z"
+    },
+    {
+      "insertId": "1vhkczxfa1upvh",
+      "jsonPayload": {
+        "agent_message_count": 1,
+        "duration_ms": 946,
+        "error_message": "status_code: 400, model_name: gemini-3.1-pro-preview, body: {'error': {'code': 400, 'message': 'The document has no pages.', 'status': 'INVALID_ARGUMENT'}}",
+        "error_type": "ModelHTTPError",
+        "event": "task_error",
+        "file_count": 1,
+        "files": [
+          {
+            "filename": "supplier_invoice_pdf.pdf",
+            "mime_type": "application/pdf",
+            "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+            "size_bytes": 61
+          }
+        ],
+        "graceful_completion": true,
+        "model": "gemini-3.1-pro-preview",
+        "path": "/solve",
+        "prompt": "Opprett en leverand\u00f8r med navn Eval Supplier c45d569bc6 og bokf\u00f8r en leverand\u00f8rfaktura basert p\u00e5 vedlegget. Bruk c45d569bc6 i beskrivelsen p\u00e5 f\u00f8ringen eller voucheret. Ikke gj\u00f8r un\u00f8dvendige oppslag. trace_token=c45d569bc6",
+        "run_id": "d19c11d9418f43cb956cae08b0ace504"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:34:27.733922670Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "ERROR",
+      "timestamp": "2026-03-21T20:34:27.733922670Z"
+    },
+    {
+      "insertId": "1k2nlxlf9mny6d",
+      "jsonPayload": {
+        "attachment_count": 1,
+        "attachment_filenames": [
+          "supplier_invoice_pdf.pdf"
+        ],
+        "event": "attachment_extraction_status",
+        "extractor_available": true,
+        "extractor_used": false,
+        "fallback_reason": "extractor_not_used",
+        "fallback_used": true,
+        "run_id": "d19c11d9418f43cb956cae08b0ace504"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:34:27.633048420Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:34:27.633048420Z"
+    },
+    {
+      "insertId": "j621mvf949rhx",
+      "jsonPayload": {
+        "event": "agent_messages",
+        "message_count": 1,
+        "messages": [
+          {
+            "kind": "request",
+            "model_name": null,
+            "parts": [
+              {
+                "content": [
+                  "Opprett en leverand\u00f8r med navn Eval Supplier c45d569bc6 og bokf\u00f8r en leverand\u00f8rfaktura basert p\u00e5 vedlegget. Bruk c45d569bc6 i beskrivelsen p\u00e5 f\u00f8ringen eller voucheret. Ikke gj\u00f8r un\u00f8dvendige oppslag. trace_token=c45d569bc6",
+                  {
+                    "_identifier": null,
+                    "data": {
+                      "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+                      "size": 61,
+                      "type": "bytes"
+                    },
+                    "kind": "binary",
+                    "media_type": "application/pdf",
+                    "vendor_metadata": null
+                  }
+                ],
+                "part_kind": "user-prompt"
+              }
+            ],
+            "provider_name": null,
+            "run_id": "7e903a8a-3511-43bf-9c50-d734937d5f33",
+            "timestamp": "2026-03-21 20:34:27.019501+00:00"
+          }
+        ],
+        "model": "gemini-3.1-pro-preview",
+        "run_id": "d19c11d9418f43cb956cae08b0ace504",
+        "usage": null
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:34:27.560261631Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:34:27.560261631Z"
+    },
+    {
+      "insertId": "1jsqqqcfaf6myc",
+      "jsonPayload": {
+        "attachment_count": 1,
+        "event": "attachment_extractor_availability",
+        "extractor_available": true,
+        "run_id": "d19c11d9418f43cb956cae08b0ace504"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:34:27.030424639Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:34:27.030424639Z"
+    },
+    {
+      "insertId": "1npr7shf97i87x",
+      "jsonPayload": {
+        "auth_present": true,
+        "event": "request_received",
+        "file_count": 1,
+        "files": [
+          {
+            "filename": "supplier_invoice_pdf.pdf",
+            "mime_type": "application/pdf",
+            "sha256": "ab6d5a732c745236c6f60d162d2cbfb3365d52efc50cc966d907a67e7b643448",
+            "size_bytes": 61
+          }
+        ],
+        "model": "gemini-3.1-pro-preview",
+        "path": "/solve",
+        "prompt": "Opprett en leverand\u00f8r med navn Eval Supplier c45d569bc6 og bokf\u00f8r en leverand\u00f8rfaktura basert p\u00e5 vedlegget. Bruk c45d569bc6 i beskrivelsen p\u00e5 f\u00f8ringen eller voucheret. Ikke gj\u00f8r un\u00f8dvendige oppslag. trace_token=c45d569bc6",
+        "run_id": "d19c11d9418f43cb956cae08b0ace504",
+        "tripletex_base_url": "https://kkpqfuj-amager.tripletex.dev/v2"
+      },
+      "logName": "projects/ai-nm26osl-1850/logs/tripletex-agent",
+      "receiveTimestamp": "2026-03-21T20:34:26.789987295Z",
+      "resource": {
+        "labels": {
+          "configuration_name": "ai-accounting-agent",
+          "location": "europe-west4",
+          "project_id": "ai-nm26osl-1850",
+          "revision_name": "ai-accounting-agent-00041-pkv",
+          "service_name": "ai-accounting-agent"
+        },
+        "type": "cloud_run_revision"
+      },
+      "severity": "INFO",
+      "timestamp": "2026-03-21T20:34:26.789987295Z"
+    }
+  ]
+}
